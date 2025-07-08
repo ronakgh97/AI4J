@@ -14,6 +14,7 @@ AI4J (AI for Java) is a lightweight Java framework developed by Ronak, designed 
     *   **File-Based Memory:** Persists chat history to a file.
 *   **Streaming Support:** Efficiently handles LLM responses as they are generated.
 *   **Model Parameter Configuration:** Easily set parameters like temperature, max tokens, and top-p.
+*   **Configurable GUI Settings:** The `SwingChatbot` now includes a settings dialog to dynamically adjust LLM parameters (temperature, max tokens, top-p) and select different models from a dropdown, enhancing user control and experimentation.
 *   **Prompt Templating:** Utilize `PromptTemplate` to define and format prompts with dynamic variables, enhancing flexibility and reusability.
 *   **Robust Error Handling:** Implements a more elegant and specific exception handling mechanism with custom exceptions (`LLMServiceException`, `LLMParseException`, `LLMNetworkException`) for clearer error identification and management.
 *   **Enhanced Code Readability:** Extensive inline comments have been added to explain complex logic, class purposes, and method functionalities, making the codebase easier to understand and contribute to.
@@ -68,7 +69,15 @@ This example demonstrates a high-level chatbot using `ChatServices` with `Slidin
 mvn exec:java -Dexec.mainClass="com.aiforjava.examples.HighLevelChatbot"
 ```
 
-#### 4. `ChatBot.java` (Low-Level, File-Based Memory)
+#### 4. `SwingChatbot.java` (High-Level, Swing GUI)
+
+This example demonstrates a high-level chatbot with a Java Swing-based graphical user interface.
+
+```bash
+mvn exec:java -Dexec.mainClass="com.aiforjava.demo.SwingChatbot"
+```
+
+#### 5. `ChatBot.java` (Low-Level, File-Based Memory)
 
 This example demonstrates using `FileMemory` to persist chat history across sessions. The chat log will be saved in the `chat_logs` directory relative to your project's execution.
 
@@ -216,8 +225,12 @@ The project uses the following key dependencies, managed by Maven:
 
 ## Contributing
 
-As this project is under active development by Ronak, contributions are welcome! Please feel free to open issues or submit pull requests.
+AI4J is an open-source project, and contributions are highly encouraged! Whether you're fixing bugs, adding new features, improving documentation, or suggesting enhancements, your input is valuable. Please feel free to open issues or submit pull requests.
 
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
+
+## Open Source
+
+AI4J is an open-source project, and we welcome community involvement. We believe in collaborative development to build a robust and flexible framework for Java-based AI applications.

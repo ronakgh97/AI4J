@@ -48,7 +48,7 @@ public class ChatServices {
      */
     private void initialize() {
         memory.clear();
-        memory.addMessage(new Message(MessageRole.SYSTEM, promptTemplate.build()));
+        memory.addMessage(new Message(MessageRole.SYSTEM, promptTemplate.getSystemPrompt()));
     }
 
     /**
@@ -72,7 +72,7 @@ public class ChatServices {
      * @throws LLMServiceException If an error occurs during the chat completion.
      */
     public String chat(String userMessage, ModelParams params) throws LLMServiceException {
-        memory.addMessage(new Message(MessageRole.USER, promptTemplate.set("user_message", userMessage).build()));
+        memory.addMessage(new Message(MessageRole.USER, promptTemplate.formatUserMessage(userMessage)));
         String response = llm.generate(memory.getMessagesList(), params);
         memory.addMessage(new Message(MessageRole.ASSISTANT, response));
         return response;
@@ -99,7 +99,7 @@ public class ChatServices {
      * @throws LLMServiceException If an error occurs during the chat completion.
      */
     public void chatStream(String userMessage, ModelParams params, StreamHandler handler) throws LLMServiceException {
-        memory.addMessage(new Message(MessageRole.USER, promptTemplate.set("user_message", userMessage).build()));
+        memory.addMessage(new Message(MessageRole.USER, promptTemplate.formatUserMessage(userMessage)));
         StringBuilder response = new StringBuilder();
         llm.generateStream(memory.getMessagesList(), params, content -> {
             response.append(content);

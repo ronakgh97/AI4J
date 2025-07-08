@@ -1,48 +1,42 @@
 package com.aiforjava.llm.Prompt;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * A simple template engine for creating prompts with variables.
- * This class allows you to define a prompt with placeholders (e.g., "{{name}}")
- * and then substitute them with actual values.
+ * A template class for structuring prompts for Large Language Models (LLMs).
+ * This class separates the system prompt from the user message template,
+ * allowing for clear role-based prompting.
  */
 public class PromptTemplate {
-    private final String template;
-    private final Map<String, String> variables = new HashMap<>();
+    private final String systemPrompt;
+    private final String userMessageTemplate;
 
     /**
-     * Constructs a new PromptTemplate with the given template string.
+     * Constructs a new PromptTemplate.
      *
-     * @param template The template string with placeholders.
+     * @param systemPrompt The initial system instruction or persona for the LLM.
+     * @param userMessageTemplate The template string for user messages,
+     *                            which should contain a "{user_message}" placeholder.
      */
-    public PromptTemplate(String template) {
-        this.template = template;
+    public PromptTemplate(String systemPrompt, String userMessageTemplate) {
+        this.systemPrompt = systemPrompt;
+        this.userMessageTemplate = userMessageTemplate;
     }
 
     /**
-     * Sets a variable to be used in the template.
+     * Returns the system prompt.
      *
-     * @param key The name of the variable (without the curly braces).
-     * @param value The value to substitute for the variable.
-     * @return This PromptTemplate instance for method chaining.
+     * @return The system prompt string.
      */
-    public PromptTemplate set(String key, String value) {
-        variables.put(key, value);
-        return this;
+    public String getSystemPrompt() {
+        return systemPrompt;
     }
 
     /**
-     * Builds the final prompt string by substituting all the variables.
+     * Formats a user message according to the user message template.
      *
-     * @return The final prompt string with all variables replaced.
+     * @param userMessage The raw user message.
+     * @return The formatted user message string.
      */
-    public String build() {
-        String result = template;
-        for (Map.Entry<String, String> entry : variables.entrySet()) {
-            result = result.replace("{{" + entry.getKey() + "}}", entry.getValue());
-        }
-        return result;
+    public String formatUserMessage(String userMessage) {
+        return userMessageTemplate.replace("{user_message}", userMessage);
     }
 }

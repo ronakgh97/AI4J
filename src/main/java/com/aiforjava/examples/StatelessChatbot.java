@@ -22,7 +22,7 @@ public class StatelessChatbot {
 
     public static void main(String[] args) {
         LLM_Client client = new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90),"local");
-        ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "gemma-3-4b-it");
+        ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "google/gemma-3-1b");
 
         ModelParams params = new ModelParams.Builder()
                 .setTemperature(0.7)

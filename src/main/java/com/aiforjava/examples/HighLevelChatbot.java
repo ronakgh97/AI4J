@@ -25,7 +25,7 @@ import java.util.Scanner;
 public class HighLevelChatbot {
 
     private static final String LLM_BASE_URL = "http://localhost:1234";
-    private static final String MODEL_NAME = "gemma-3-4b-it"; // Or your preferred model
+    private static final String MODEL_NAME = "google/gemma-3-1b"; // Or your preferred model
     private static final int MEMORY_WINDOW_SIZE = 10; // Keep last 10 messages in memory
 
     public static void main(String[] args) {
@@ -46,7 +46,7 @@ public class HighLevelChatbot {
         MemoryManager memory = new SlidingWindowMemory(MEMORY_WINDOW_SIZE);
 
         // Initialize prompt template
-        PromptTemplate promptTemplate = new PromptTemplate("You are a helpful AI assistant. Keep your responses concise and to the point.\nUser: {user_message}\nAI:");
+        PromptTemplate promptTemplate = new PromptTemplate("You are a helpful AI assistant. Keep your responses concise and to the point.", "User: {user_message}\nAI:");
 
         // Initialize high-level chat service with memory and a system prompt
         ChatServices chatService = new ChatServices(

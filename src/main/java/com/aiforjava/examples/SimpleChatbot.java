@@ -37,7 +37,7 @@ public class SimpleChatbot {
         MemoryManager memory = new SlidingWindowMemory(20);
 
         // 4. Create High-Level Chat Service
-        PromptTemplate promptTemplate = new PromptTemplate("You are AI Assistant. Keep responses concise (1-2 sentences max).\nUser: {user_message}\nAI:");
+        PromptTemplate promptTemplate = new PromptTemplate("You are AI Assistant. Keep responses concise (1-2 sentences max).", "User: {user_message}\nAI:");
         ChatServices chatService = new ChatServices(
                 llm,
                 memory,
