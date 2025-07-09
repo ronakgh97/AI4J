@@ -28,6 +28,9 @@ public class DefaultHttpClient implements LLM_Client {
     private final String baseUrl;
     private final Duration timeout;
     private final String apiKey;
+    private final boolean useBaseUrlAsEndpoint;
+    private final StreamResponseParser streamResponseParser;
+    private final long streamDelayMillis;
 
     /**
      * Constructs a new DefaultHttpClient.
@@ -37,9 +40,38 @@ public class DefaultHttpClient implements LLM_Client {
      * @param apiKey  The API key needed for running online models like gemini, openAI, deepseek etc
      */
     public DefaultHttpClient(String baseUrl, Duration timeout, String apiKey) {
+        this(baseUrl, timeout, apiKey, false, new DefaultStreamResponseParser(), 0L); // Default to no delay
+    }
+
+    /**
+     * Constructs a new DefaultHttpClient.
+     *
+     * @param baseUrl The base URL of the LLM API (e.g., "http://localhost:1234"). Must not be null.
+     * @param timeout The maximum duration to wait for a connection and response. Must not be null.
+     * @param apiKey  The API key needed for running online models like gemini, openAI, deepseek etc
+     * @param useBaseUrlAsEndpoint If true, the baseUrl will be used as the full endpoint URI, ignoring the 'endpoint' parameter for path concatenation.
+     */
+    public DefaultHttpClient(String baseUrl, Duration timeout, String apiKey, boolean useBaseUrlAsEndpoint) {
+        this(baseUrl, timeout, apiKey, useBaseUrlAsEndpoint, new DefaultStreamResponseParser(), 0L); // Default to no delay
+    }
+
+    /**
+     * Constructs a new DefaultHttpClient.
+     *
+     * @param baseUrl The base URL of the LLM API (e.g., "http://localhost:1234"). Must not be null.
+     * @param timeout The maximum duration to wait for a connection and response. Must not be null.
+     * @param apiKey  The API key needed for running online models like gemini, openAI, deepseek etc
+     * @param useBaseUrlAsEndpoint If true, the baseUrl will be used as the full endpoint URI, ignoring the 'endpoint' parameter for path concatenation.
+     * @param streamResponseParser The parser to use for streaming responses.
+     * @param streamDelayMillis The delay in milliseconds between processing each stream chunk for smoother output.
+     */
+    public DefaultHttpClient(String baseUrl, Duration timeout, String apiKey, boolean useBaseUrlAsEndpoint, StreamResponseParser streamResponseParser, long streamDelayMillis) {
         this.baseUrl = Objects.requireNonNull(baseUrl, "URL cannot be null");
         this.timeout = Objects.requireNonNull(timeout, "Timeout cannot be null");
         this.apiKey = apiKey; //Initialize API key for online models
+        this.useBaseUrlAsEndpoint = useBaseUrlAsEndpoint;
+        this.streamResponseParser = Objects.requireNonNull(streamResponseParser, "StreamResponseParser cannot be null");
+        this.streamDelayMillis = streamDelayMillis;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(timeout)
                 .version(HttpClient.Version.HTTP_1_1)
@@ -59,9 +91,10 @@ public class DefaultHttpClient implements LLM_Client {
     @Override
     public String sendRequest(String endpoint, String json) throws LLMServiceException {
         try {
-
+            // Construct the URI based on whether the base URL should be used as the full endpoint
+            String uriString = useBaseUrlAsEndpoint ? baseUrl : baseUrl + "/" + endpoint;
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/" + endpoint))
+                    .uri(URI.create(uriString))
                     .timeout(timeout)
                     .version(HttpClient.Version.HTTP_1_1)
                     .header("Content-Type", "application/json");
@@ -71,57 +104,6 @@ public class DefaultHttpClient implements LLM_Client {
 
             HttpRequest request = requestBuilder.POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
-
-            /*HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/" + endpoint))
-                    .timeout(timeout)
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .build();*/
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() >= 400) {
-                throw new LLMServiceException("HTTP error: " + response.statusCode() + " : " + response.body());
-            }
-
-            return response.body();
-
-        } catch (HttpTimeoutException e) {
-            throw new Exception_Timeout("Request timed out after " + timeout.toSeconds() + " seconds", e);
-        } catch (IOException e) {
-            throw new LLMNetworkException("Network error communicating with " + baseUrl, e);
-        } catch (IllegalArgumentException e) {
-            throw new LLMServiceException("Invalid request argument: " + e.getMessage(), e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new LLMNetworkException("Request was Interrupted", e);
-        }
-    }
-
-    public String sendRequestEndPointOverride(String endpoint, String json) throws LLMServiceException {
-        try {
-
-            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl))
-                    .timeout(timeout)
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .header("Content-Type", "application/json");
-
-            if(apiKey!=null && !apiKey.isEmpty())
-                requestBuilder.header("Authorization", "Bearer " + apiKey);
-
-            HttpRequest request = requestBuilder.POST(HttpRequest.BodyPublishers.ofString(json))
-                    .build();
-
-            /*HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/" + endpoint))
-                    .timeout(timeout)
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .build();*/
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -158,9 +140,9 @@ public class DefaultHttpClient implements LLM_Client {
     @Override
     public void sendStreamRequest(String endpoint, String json, StreamHandler handler) throws LLMServiceException {
         try {
-
+            String uriString = useBaseUrlAsEndpoint ? baseUrl : baseUrl + "/" + endpoint;
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/" + endpoint))
+                    .uri(URI.create(uriString))
                     .timeout(timeout)
                     .version(HttpClient.Version.HTTP_1_1)
                     .header("Content-Type", "application/json");
@@ -171,49 +153,36 @@ public class DefaultHttpClient implements LLM_Client {
             HttpRequest request = requestBuilder.POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
 
-            /*HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/" + endpoint))
-                    .timeout(timeout)
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .build();*/
-
             HttpResponse<Stream<String>> response = httpClient.send(request, HttpResponse.BodyHandlers.ofLines());
 
             if (response.statusCode() >= 400) {
                 throw new LLMServiceException("HTTP error: " + response.statusCode());
             }
 
-            AtomicBoolean isFirst = new AtomicBoolean(true);
-            ObjectMapper mapper = new ObjectMapper();
-
             response.body().forEach(line -> {
-                if (line.startsWith("data: ")) {
-                    String jsonData = line.substring(6).trim();
-                    if (jsonData.equals("[DONE]")) {
-                        return;
+                try {
+                    String content = streamResponseParser.parse(line);
+                    if (content != null) {
+                        handler.onStream(content);
                     }
-                    try {
-                        JsonNode rootNode = mapper.readTree(jsonData);
-                        JsonNode choices = rootNode.path("choices");
-                        if (choices.isArray() && !choices.isEmpty()) {
-                            JsonNode contentNode = choices.get(0).path("delta").path("content");
-                            if (!contentNode.isMissingNode()) {
-                                String content = contentNode.asText();
-                                if (isFirst.getAndSet(false) && content != null) {
-                                    content = content.stripLeading();
-                                }
-                                if (content != null) {
-                                    handler.onStream(content);
-                                }
-                            }
+                    if (streamDelayMillis > 0) {
+                        try {
+                            Thread.sleep(streamDelayMillis);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException(new LLMNetworkException("Stream interrupted during delay", e));
                         }
-                    } catch (IOException e) {
-                        throw new RuntimeException(new LLMParseException("Failed to parse streaming LLM response JSON: " + e.getMessage(), e));
                     }
+                } catch (LLMParseException e) {
+                    throw new RuntimeException(e); // Wrap checked exception in RuntimeException for lambda
                 }
             });
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof LLMParseException) {
+                throw (LLMParseException) e.getCause();
+            } else {
+                throw e;
+            }
         } catch (HttpTimeoutException e) {
             throw new Exception_Timeout("Request timed out after " + timeout.toSeconds() + " seconds", e);
         } catch (IOException e) {

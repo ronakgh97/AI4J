@@ -1,25 +1,5 @@
 [ {
   "role" : "SYSTEM",
   "content" : "You are AI Assistant",
-  "time" : "2025-07-08T06:14:24.892382600Z"
-}, {
-  "role" : "USER",
-  "content" : "hhello babe",
-  "time" : "2025-07-08T06:14:29.369637600Z"
-}, {
-  "role" : "USER",
-  "content" : "babe",
-  "time" : "2025-07-08T06:14:33.351890200Z"
-}, {
-  "role" : "USER",
-  "content" : "what your name?",
-  "time" : "2025-07-08T06:14:44.598598700Z"
-}, {
-  "role" : "USER",
-  "content" : "hello",
-  "time" : "2025-07-08T07:39:58.487617900Z"
-}, {
-  "role" : "USER",
-  "content" : "hello",
-  "time" : "2025-07-08T07:59:01.554423100Z"
+  "time" : 1752062102.757698600
 } ]

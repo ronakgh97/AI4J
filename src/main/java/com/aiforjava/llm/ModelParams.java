@@ -37,6 +37,9 @@ public class ModelParams {
          * @return The Builder instance.
          */
         public Builder setTemperature(double value) {
+            if (value < 0.0 || value > 1.0) {
+                throw new IllegalArgumentException("Temperature must be between 0.0 and 1.0");
+            }
             params.temperature = value;
             return this;
         }
@@ -47,6 +50,9 @@ public class ModelParams {
          * @return The Builder instance.
          */
         public Builder setMaxTokens(int value) {
+            if (value <= 0) {
+                throw new IllegalArgumentException("Max tokens must be greater than 0");
+            }
             params.maxTokens = value;
             return this;
         }
@@ -57,6 +63,9 @@ public class ModelParams {
          * @return The Builder instance.
          */
         public Builder setTopP(double value) {
+            if (value < 0.0 || value > 1.0) {
+                throw new IllegalArgumentException("TopP must be between 0.0 and 1.0");
+            }
             params.topP = value;
             return this;
         }
@@ -67,6 +76,9 @@ public class ModelParams {
          * @return The Builder instance.
          */
         public Builder setFrequencyPenalty(double value) {
+            if (value < -2.0 || value > 2.0) {
+                throw new IllegalArgumentException("Frequency penalty must be between -2.0 and 2.0");
+            }
             params.frequencyPenalty = value;
             return this;
         }
@@ -77,6 +89,9 @@ public class ModelParams {
          * @return The Builder instance.
          */
         public Builder setPresencePenalty(double value) {
+            if (value < -2.0 || value > 2.0) {
+                throw new IllegalArgumentException("Presence penalty must be between -2.0 and 2.0");
+            }
             params.presencePenalty = value;
             return this;
         }

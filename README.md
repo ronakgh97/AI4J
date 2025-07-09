@@ -1,23 +1,76 @@
 # AI4J: Java Framework for Large Language Models
 
-AI4J (AI for Java) is a lightweight Java framework developed by Ronak, designed to simplify interaction with Large Language Models (LLMs), particularly those accessible via local HTTP endpoints (e.g., LM Studio, Ollama). It provides both low-level and high-level APIs for chat-based interactions, along with flexible memory management options to maintain conversational context.
+AI4J (AI for Java) is a lightweight and robust Java framework designed to simplify the integration and interaction with Large Language Models (LLMs). It provides a comprehensive set of tools for building intelligent applications, supporting both low-level, stateless interactions and high-level, stateful conversational experiences. AI4J is particularly well-suited for connecting to LLMs accessible via local HTTP endpoints (e.g., LM Studio, Ollama), offering flexibility, efficient memory management, and a focus on developer experience.
 
-**Note:** This project is currently under active development, and many improvements are planned.
+**Note:** This project is currently under active development, and continuous improvements are being made.
 
 ## Features
 
-*   **Flexible LLM Integration:** Connects to LLMs via HTTP, supporting custom endpoints.
-*   **Low-Level Chat API:** Direct interaction with LLM chat completions for stateless requests.
-*   **High-Level Chat API:** Manages conversational state and memory, simplifying chatbot development.
-*   **Memory Management:**
-    *   **Sliding Window Memory:** Keeps a configurable number of recent messages in context.
-    *   **File-Based Memory:** Persists chat history to a file.
-*   **Streaming Support:** Efficiently handles LLM responses as they are generated.
-*   **Model Parameter Configuration:** Easily set parameters like temperature, max tokens, and top-p.
-*   **Configurable GUI Settings:** The `SwingChatbot` now includes a settings dialog to dynamically adjust LLM parameters (temperature, max tokens, top-p) and select different models from a dropdown, enhancing user control and experimentation.
-*   **Prompt Templating:** Utilize `PromptTemplate` to define and format prompts with dynamic variables, enhancing flexibility and reusability.
-*   **Robust Error Handling:** Implements a more elegant and specific exception handling mechanism with custom exceptions (`LLMServiceException`, `LLMParseException`, `LLMNetworkException`) for clearer error identification and management.
-*   **Enhanced Code Readability:** Extensive inline comments have been added to explain complex logic, class purposes, and method functionalities, making the codebase easier to understand and contribute to.
+AI4J offers a rich set of features to empower your LLM-powered applications:
+
+### Core LLM Interaction APIs
+
+*   **Low-Level Chat API (`ChatServices_LowLevel`):** Provides direct, stateless interaction with LLM chat completion endpoints. Ideal for fine-grained control over requests and raw JSON payload manipulation.
+*   **High-Level Chat API (`ChatServices`):** A higher-level abstraction that simplifies building stateful chatbots by automatically managing conversational context and integrating with memory managers and prompt templates.
+
+### LLM Client & Connectivity
+
+*   **Flexible LLM Client (`LLM_Client` & `DefaultHttpClient`):** An extensible interface for LLM communication, with a default HTTP client implementation supporting:
+    *   Configurable base URLs and API endpoints.
+    *   Customizable request timeouts.
+    *   API key authentication for online LLM providers (e.g., Gemini, OpenAI).
+    *   Option to use the base URL as the full endpoint URI for specific API structures.
+*   **Streaming Support:** Efficiently handles LLM responses as they are generated, providing a smooth, real-time user experience.
+    *   **Custom Stream Handling:** Utilizes `StreamHandler` for processing incoming content chunks.
+    *   **Flexible Stream Response Parsing:** The `StreamResponseParser` interface (with `DefaultStreamResponseParser` and `WordStreamHandler`) allows for custom parsing of diverse LLM streaming response formats.
+    *   **Configurable Streaming Speed:** Control the speed of streamed responses using `streamDelayMillis` for a smoother output.
+
+### Memory Management
+
+AI4J provides flexible and optimized memory management strategies to maintain conversational context:
+
+*   **`MemoryManager` Interface:** Defines the contract for adding, retrieving, and clearing messages.
+*   **`SlidingWindowMemory`:** Maintains a fixed-size window of the most recent messages, discarding older ones to keep context relevant.
+*   **`OptimizedSlidingWindowMemory`:** An improved, `Deque`-based implementation of sliding window memory for better performance.
+*   **`FileMemory`:** Persists chat history to a file, enabling conversations to be resumed across application sessions.
+*   **`CachedFileMemory`:** An enhanced file-based memory solution with in-memory caching for improved performance and efficient access to chat logs.
+
+### Message Structure
+
+*   **`Message` & `MessageRole`:** Clearly defined classes for representing conversational messages, including roles like `SYSTEM`, `USER`, and `ASSISTANT`.
+
+### Prompt Engineering
+
+*   **`PromptTemplate`:** A powerful utility for defining and formatting prompts with dynamic variables. It allows for flexible structuring of system and user messages, enhancing prompt reusability and consistency.
+
+### Model Parameter Configuration
+
+*   **`ModelParams`:** Easily configure LLM parameters such as temperature, maximum tokens, and top-p. Includes robust input validation to ensure valid configurations.
+
+### Robust Error Handling & Logging
+
+*   **Custom Exceptions:** Implements a more elegant and specific exception handling mechanism with custom exceptions:
+    *   `LLMServiceException`: General LLM service errors.
+    *   `LLMParseException`: Errors during LLM response parsing.
+    *   `LLMNetworkException`: Network communication errors.
+    *   `Exception_Timeout`: Request timeout errors.
+*   **`ExceptionHandler`:** Centralized exception handling.
+*   **SLF4J Integration:** Uses SLF4J for flexible and configurable logging of errors and application events.
+
+### Graphical User Interface (Demo)
+
+*   **`SwingChatbot`:** A high-level, Java Swing-based graphical user interface demonstrating the framework's capabilities.
+    *   **Enhanced UI/UX:** Features streamlined user message display, efficient input field clearing, and improved focus handling.
+*   **`SettingsDialog`:** A dynamic settings dialog integrated with `SwingChatbot` for on-the-fly adjustment of LLM parameters (temperature, max tokens, top-p) and model selection.
+    *   **Visual Consistency:** Achieves a cohesive look and feel with the main chatbot UI.
+    *   **Improved Validation:** Robust input validation for parameters like 'Max Tokens'.
+    *   **Intuitive Sliders:** Provides clear, decimal labels for Temperature and Top P sliders.
+    *   **Accurate Feedback:** Ensures "LLM settings updated!" message only appears when settings are genuinely applied.
+*   **`Welcome`:** Utility for generating welcome messages.
+
+### Code Quality
+
+*   **Enhanced Code Readability:** Extensive inline comments explain complex logic, class purposes, and method functionalities, making the codebase easier to understand and contribute to.
 
 ## Getting Started
 
@@ -41,187 +94,98 @@ These instructions will get you a copy of the project up and running on your loc
     mvn clean install
     ```
 
-### Running Examples
+## Usage Examples
 
-The `src/main/java/com/aiforjava.examples` directory contains several example chatbots demonstrating different features.
+The `src/main/java/com.aiforjava.examples` directory contains several example chatbots demonstrating different features.
 
-#### 1. `StatelessChatbot.java` (Low-Level, No Memory)
+### 1. Stateless Chatbot (`StatelessChatbot.java`)
 
-This example shows a basic, stateless interaction with the LLM. Each turn is independent.
+Demonstrates basic, stateless interaction with the LLM using the low-level API. Each turn is independent.
 
-```bash
-mvn exec:java -Dexec.mainClass="com.aiforjava.examples.StatelessChatbot"
+```java
+// Example snippet (simplified)
+LLM_Client client = new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90), null);
+ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "gemma-3-4b-it");
+List<Message> messages = List.of(
+    new Message(MessageRole.SYSTEM, "You are a helpful assistant."),
+    new Message(MessageRole.USER, "Hello, how are you?")
+);
+llm.generateStream(messages, new ModelParams.Builder().build(), System.out::print);
 ```
 
-#### 2. `SimpleChatbot.java` (High-Level, Sliding Window Memory)
+### 2. Simple Chatbot (`SimpleChatbot.java`)
 
-This example uses the high-level `ChatServices` with `SlidingWindowMemory` to maintain a limited conversational history.
+Illustrates the high-level `ChatServices` with `SlidingWindowMemory` to maintain a limited conversational history.
 
-```bash
-mvn exec:java -Dexec.mainClass="com.aiforjava.examples.SimpleChatbot"
+```java
+// Example snippet (simplified)
+MemoryManager memory = new SlidingWindowMemory(20);
+PromptTemplate promptTemplate = new PromptTemplate("You are AI Assistant.", "{user_message}");
+ChatServices chatService = new ChatServices(
+    new ChatServices_LowLevel(new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90), null), "gemma-3-4b-it"),
+    memory,
+    new ModelParams.Builder().build(),
+    promptTemplate
+);
+chatService.chatStream("What is the capital of France?", System.out::print);
 ```
 
-#### 3. `HighLevelChatbot.java` (High-Level, Sliding Window Memory)
+### 3. High-Level Chatbot (`HighLevelChatbot.java`)
 
-This example demonstrates a high-level chatbot using `ChatServices` with `SlidingWindowMemory`.
+Another demonstration of a high-level chatbot using `ChatServices` with `SlidingWindowMemory`.
 
-```bash
-mvn exec:java -Dexec.mainClass="com.aiforjava.examples.HighLevelChatbot"
-```
+### 4. Swing Chatbot (`SwingChatbot.java`)
 
-#### 4. `SwingChatbot.java` (High-Level, Swing GUI)
-
-This example demonstrates a high-level chatbot with a Java Swing-based graphical user interface.
+A comprehensive example showcasing a Java Swing-based graphical user interface for interacting with the LLM, including dynamic settings.
 
 ```bash
 mvn exec:java -Dexec.mainClass="com.aiforjava.demo.SwingChatbot"
 ```
 
-#### 5. `ChatBot.java` (Low-Level, File-Based Memory)
+### 5. File-Based Memory Chatbot (`ChatBot.java`)
 
-This example demonstrates using `FileMemory` to persist chat history across sessions. The chat log will be saved in the `chat_logs` directory relative to your project's execution.
+Demonstrates using `FileMemory` to persist chat history across sessions. Chat logs are saved in the `chat_logs` directory.
 
-```bash
-mvn exec:java -Dexec.mainClass="com.aiforjava.examples.ChatBot"
-```
+### 6. Raw API Control (`RawChatbot.java`)
 
-#### 5. `RawChatbot.java` (Low-Level, Raw JSON Control)
+Showcases the lowest level of interaction, allowing direct sending of raw JSON requests to the LLM endpoint for maximum flexibility.
 
-This example showcases the lowest level of interaction, allowing you to send raw JSON requests directly to the LLM endpoint. This provides maximum flexibility for custom API interactions.
-
-```bash
-mvn exec:java -Dexec.mainClass="com.aiforjava.examples.RawChatbot"
-```
-
-## Usage
-
-### LLM Client
-
-The `LLM_Client` interface (`com.aiforjava.llm.LLM_Client`) defines how to send requests to the LLM. `DefaultHttpClient` provides a basic HTTP client implementation.
-
-### Chat Services
-
-*   **`ChatServices_LowLevel` (`com.aiforjava.llm.Chat.LowLevel.ChatServices_LowLevel`)**:
-    Provides direct methods for generating LLM responses. It's stateless and requires you to manage the message list for each request.
-
-    ```java
-    // Example (from StatelessChatbot.java)
-    LLM_Client client = new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90));
-    ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "gemma-3-4b-it");
-
-    List<Message> messages = List.of(
-            new Message(MessageRole.SYSTEM, "You are a helpful assistant."),
-            new Message(MessageRole.USER, "Hello, how are you?")
-    );
-
-    llm.generateStream(messages, params, System.out::print);
-    ```
-
-    **Raw API Access:**
-    For ultimate control, `ChatServices_LowLevel` also provides methods to send raw JSON requests directly to the LLM endpoint. This is useful for advanced use cases or when interacting with LLMs that have non-standard API structures.
-
-    *   `generateRaw(String endpoint, String requestJson)`: Sends a raw JSON request and returns the raw JSON response.
-    *   `generateStreamRaw(String endpoint, String requestJson, StreamHandler handler)`: Sends a raw JSON request for streaming responses.
-
-    ```java
-    // Example of raw API usage (from RawChatbot.java)
-    String rawRequest = "{ \"model\": \"gemma-3-4b-it\", \"messages\": [ { \"role\": \"user\", \"content\": \"Hello\" } ] }";
-    String rawResponse = llm.generateRaw("v1/chat/completions", rawRequest);
-    System.out.println(rawResponse);
-    ```
-
-*   **`ChatServices` (`com.aiforjava.llm.Chat.HighLevel.ChatServices`)**:
-    A higher-level abstraction that integrates with `MemoryManager` to handle conversational context automatically.
-
-    ```java
-    // Example (from SimpleChatbot.java)
-    MemoryManager memory = new SlidingWindowMemory(20); // Or new FileMemory(...)
-    ChatServices chatService = new ChatServices(
-            llm,
-            memory,
-            params,
-            "You are AI Assistant. Keep responses concise (1-2 sentences max)."
-    );
-
-    chatService.chatStream("What is the capital of France?", System.out::print);
-    ```
-
-### Memory Management
-
-The `MemoryManager` interface (`com.aiforjava.memory.MemoryManager`) defines methods for adding, retrieving, and clearing messages.
-
-*   **`SlidingWindowMemory` (`com.aiforjava.memory.SlidingWindowMemory`)**:
-    Maintains a fixed-size window of the most recent messages. When the window is full, the oldest message is removed.
-
-    ```java
-    MemoryManager memory = new SlidingWindowMemory(10); // Keep last 10 messages
-    ```
-
-*   **`FileMemory` (`com.aiforjava.memory.ChatLogs.FileMemory`)**:
-    Persists chat messages to a file, allowing conversations to be resumed.
-
-    ```java
-    MemoryManager memory = new FileMemory("C:\path\to\your\chatlogs");
-    ```
-
-### Message Structure
-
-Messages are represented by the `Message` class (`com.aiforjava.message.Message`) and have a `MessageRole` (`com.aiforjava.message.MessageRole`) (e.g., `SYSTEM`, `USER`, `ASSISTANT`).
-
-## Project Structure
-
-```
-AI4J/
-├───.idea/
-├───.mvn/
-├───src/
-│   ├───main/
-│   │   ├───java/
-│   │   │   └───com/
-│   │   │       └───aiforjava/
-│   │   │           ├───testEndpoints.java          // Utility to test LLM server connectivity
-│   │   │           ├───examples/                   // Example chatbot implementations
-│   │   │           │   ├───ChatBot.java
-│   │   │           │   ├───SimpleChatbot.java
-│   │   │           │   └───StatelessChatbot.java
-│   │   │           ├───exception/                  // Custom exception handling
-│   │   │           │   ├───Exception_Timeout.java
-│   │   │           │   └───ExceptionHandler.java
-│   │   │           ├───llm/                        // LLM client and related classes
-│   │   │           │   ├───DefaultHttpClient.java
-│   │   │           │   ├───LLM_Client.java         // Interface for LLM client
-│   │   │           │   ├───ModelParams.java        // LLM model parameters
-│   │   │           │   ├───StreamHandler.java      // Interface for handling streaming responses
-│   │   │           │   ├───Chat/
-│   │   │           │   │   ├───HighLevel/
-│   │   │           │   │   │   └───ChatServices.java // High-level chat service with memory
-│   │   │           │   │   ├───Logs/               // Directory for file-based chat logs
-│   │   │           │   │   └───LowLevel/
-│   │   │           │   │       └───ChatServices_LowLevel.java // Low-level chat service
-│   │   │           │   └───Prompt/
-│   │   │           │       └───PromptTemplate.java // Handles dynamic prompt creation
-│   │   │           ├───memory/                     // Memory management for chat history
-│   │   │           │   ├───MemoryManager.java      // Interface for memory management
-│   │   │           │   ├───SlidingWindowMemory.java// Sliding window memory implementation
-│   │   │           │   └───ChatLogs/
-│   │   │           │       └───FileMemory.java     // File-based memory implementation
-│   │   │           └───message/                    // Message related classes
-│   │   │               ├───Message.java            // Represents a chat message
-│   │   │               └───MessageRole.java        // Enum for message roles (System, User, Assistant)
-│   │   └───resources/
-│   └───test/
-│       └───java/
-├───.gitignore
-└───pom.xml                                     // Maven project configuration
+```java
+// Example snippet (simplified)
+ChatServices_LowLevel llm = new ChatServices_LowLevel(new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90), null), "gemma-3-4b-it");
+String rawRequest = "{ \"model\": \"gemma-3-4b-it\", \"messages\": [ { \"role\": \"user\", \"content\": \"Hello\" } ] }";
+String rawResponse = llm.generateRaw("v1/chat/completions", rawRequest);
+System.out.println(rawResponse);
 ```
 
 ## Dependencies
 
 The project uses the following key dependencies, managed by Maven:
 
-*   **Jackson (jackson-databind, jackson-datatype-jsr310):** For JSON processing (serialization and deserialization).
-*   **Apache HttpComponents Client 5 (httpclient5):** For making HTTP requests to LLM endpoints.
-*   **SLF4J (slf4j-api):** Simple Logging Facade for Java.
+*   **Jackson (`jackson-databind`, `jackson-datatype-jsr310`):** For efficient JSON processing (serialization and deserialization).
+*   **Apache HttpComponents Client 5 (`httpclient5`):** For making robust HTTP requests to LLM endpoints.
+*   **SLF4J (`slf4j-api`):** Simple Logging Facade for Java, providing flexible and configurable logging.
+
+## Recent Changes
+
+*   **Optimized Memory Management:** Introduced `OptimizedSlidingWindowMemory` and `CachedFileMemory` for improved performance and flexibility in managing chat history.
+*   **Configurable Streaming Output:** Added `streamDelayMillis` to `DefaultHttpClient` for controlling the smoothness of streamed LLM responses.
+*   **Flexible Stream Response Parsing:** Implemented `StreamResponseParser` and `DefaultStreamResponseParser` to allow for custom parsing of LLM streaming formats.
+*   **Improved Model Parameter Validation:** Added input validation to `ModelParams.Builder` for more robust configuration.
+*   **Enhanced Error Logging:** Switched `ExceptionHandler` to use SLF4J for more flexible and configurable error logging.
+*   **Refactored HTTP Client:** Streamlined `DefaultHttpClient` by removing redundant methods and improving exception handling for streaming.
+*   **API Key Support:** The `DefaultHttpClient` now supports an `apiKey` for authenticating with online LLM providers.
+*   **Prompt Templating:** The high-level `ChatServices` now uses a `PromptTemplate` class to provide more flexibility in formatting system and user messages.
+*   **Improved Examples:** The examples have been updated to reflect the latest API changes and demonstrate new memory management options.
+*   **Documentation Updates:** The `README.md` has been updated to provide more accurate and comprehensive information.
+*   **Enhanced SwingChatbot UI/UX:**
+    *   Streamlined user message display and input field clearing for a smoother chat experience.
+    *   Improved focus handling in the input field after interacting with the settings dialog.
+*   **Refined Settings Dialog:**
+    *   Achieved visual consistency with the main chatbot UI's color scheme.
+    *   Implemented robust validation for 'Max Tokens'.
+    *   Provided more intuitive decimal labels (0.0-1.0) for Temperature and Top P sliders.
+    *   Ensured "LLM settings updated!" message only appears when settings are actually applied.
 
 ## Contributing
 

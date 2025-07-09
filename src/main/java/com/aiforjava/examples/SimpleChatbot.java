@@ -7,11 +7,14 @@ import java.util.*;
 import com.aiforjava.llm.Chat.HighLevel.ChatServices;
 import com.aiforjava.llm.Chat.LowLevel.ChatServices_LowLevel;
 import com.aiforjava.llm.DefaultHttpClient;
+import com.aiforjava.llm.DefaultStreamResponseParser;
 import com.aiforjava.llm.LLM_Client;
 import com.aiforjava.llm.ModelParams;
 import com.aiforjava.llm.Prompt.PromptTemplate;
 import com.aiforjava.memory.MemoryManager;
 import com.aiforjava.memory.SlidingWindowMemory;
+import com.aiforjava.memory.OptimizedSlidingWindowMemory;
+import com.aiforjava.memory.ChatLogs.CachedFileMemory;
 
 /**
  * This example demonstrates a high-level chatbot implementation using AI4J's `ChatServices`
@@ -23,7 +26,7 @@ public class SimpleChatbot {
     public static void main(String[] args) throws InterruptedException {
 
         // 1. Initialize the LLM Client and Low-Level Chat Services
-        LLM_Client client = new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90),"local");
+        LLM_Client client = new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90),"local", false, new DefaultStreamResponseParser(), 50L);
         ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "google/gemma-3-1b");
 
         // 2. Define Model Parameters
@@ -34,7 +37,9 @@ public class SimpleChatbot {
                 .build();
 
         // 3. Create Memory Manager
-        MemoryManager memory = new SlidingWindowMemory(20);
+        // MemoryManager memory = new SlidingWindowMemory(20);
+        // MemoryManager memory = new OptimizedSlidingWindowMemory(20);
+        MemoryManager memory = new com.aiforjava.memory.ChatLogs.CachedFileMemory();
 
         // 4. Create High-Level Chat Service
         PromptTemplate promptTemplate = new PromptTemplate("You are AI Assistant. Keep responses concise (1-2 sentences max).", "User: {user_message}\nAI:");

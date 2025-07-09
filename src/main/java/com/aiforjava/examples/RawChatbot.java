@@ -4,6 +4,7 @@ import com.aiforjava.exception.ExceptionHandler;
 import com.aiforjava.exception.LLMServiceException;
 import com.aiforjava.llm.Chat.LowLevel.ChatServices_LowLevel;
 import com.aiforjava.llm.DefaultHttpClient;
+import com.aiforjava.llm.DefaultStreamResponseParser;
 import com.aiforjava.llm.LLM_Client;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -22,7 +23,7 @@ import java.util.Scanner;
 public class RawChatbot {
 
     public static void main(String[] args) {
-        LLM_Client client = new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90),"local");
+        LLM_Client client = new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90),"local", false, new DefaultStreamResponseParser(), 50L);
         ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "google/gemma-3-1b");
         ObjectMapper mapper = new ObjectMapper();
 

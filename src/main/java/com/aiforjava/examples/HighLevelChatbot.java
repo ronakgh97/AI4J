@@ -1,6 +1,7 @@
 package com.aiforjava.examples;
 
 import com.aiforjava.llm.DefaultHttpClient;
+import com.aiforjava.llm.DefaultStreamResponseParser;
 import com.aiforjava.llm.LLM_Client;
 import com.aiforjava.llm.ModelParams;
 import com.aiforjava.llm.Chat.HighLevel.ChatServices;
@@ -8,6 +9,8 @@ import com.aiforjava.llm.Chat.LowLevel.ChatServices_LowLevel;
 import com.aiforjava.llm.Prompt.PromptTemplate;
 import com.aiforjava.memory.MemoryManager;
 import com.aiforjava.memory.SlidingWindowMemory;
+import com.aiforjava.memory.OptimizedSlidingWindowMemory;
+import com.aiforjava.memory.ChatLogs.CachedFileMemory;
 import java.time.Duration;
 import java.util.Scanner;
 
@@ -30,7 +33,7 @@ public class HighLevelChatbot {
 
     public static void main(String[] args) {
         // Initialize LLM client with a timeout
-        LLM_Client client = new DefaultHttpClient(LLM_BASE_URL, Duration.ofSeconds(90),"local");
+        LLM_Client client = new DefaultHttpClient(LLM_BASE_URL, Duration.ofSeconds(90),"local", false, new DefaultStreamResponseParser(), 50L);
 
         // Initialize low-level chat service
         ChatServices_LowLevel lowLevelChatService = new ChatServices_LowLevel(client, MODEL_NAME);
@@ -43,7 +46,9 @@ public class HighLevelChatbot {
                 .build();
 
         // Initialize memory manager (Sliding Window Memory)
-        MemoryManager memory = new SlidingWindowMemory(MEMORY_WINDOW_SIZE);
+        // MemoryManager memory = new SlidingWindowMemory(MEMORY_WINDOW_SIZE);
+        // MemoryManager memory = new OptimizedSlidingWindowMemory(MEMORY_WINDOW_SIZE);
+        MemoryManager memory = new com.aiforjava.memory.ChatLogs.CachedFileMemory();
 
         // Initialize prompt template
         PromptTemplate promptTemplate = new PromptTemplate("You are a helpful AI assistant. Keep your responses concise and to the point.", "User: {user_message}\nAI:");

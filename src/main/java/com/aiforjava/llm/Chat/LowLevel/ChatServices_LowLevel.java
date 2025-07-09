@@ -62,7 +62,7 @@ public class ChatServices_LowLevel {
      * @param handler A StreamHandler to process the incoming stream of content.
      * @throws LLMServiceException If any error occurs during streaming generation.
      */
-    public void generateStream(List<Message> messages, ModelParams params, StreamHandler handler) throws LLMServiceException {
+    public void generateStream(List<Message> messages, ModelParams params, StreamHandler handler) throws LLMServiceException, LLMParseException {
         String requestJson = buildRequest(messages, params, true);
         client.sendStreamRequest("v1/chat/completions", requestJson, handler);
     }
@@ -91,7 +91,7 @@ public class ChatServices_LowLevel {
      * @param handler A StreamHandler to process the incoming stream of content.
      * @throws LLMServiceException If any error occurs during the raw streaming generation.
      */
-    public void generateStreamRaw(String endpoint, String requestJson, StreamHandler handler) throws LLMServiceException {
+    public void generateStreamRaw(String endpoint, String requestJson, StreamHandler handler) throws LLMServiceException, LLMParseException {
         client.sendStreamRequest(endpoint, requestJson, handler);
     }
 

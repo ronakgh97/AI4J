@@ -19,12 +19,13 @@ public class SettingsDialog extends JDialog {
 
     private ModelParams currentModelParams;
     private String currentModelName;
+    private boolean settingsApplied = false;
 
     // UI Constants (matching SwingChatbot for consistency)
     private static final Color BACKGROUND_COLOR = new Color(48, 48, 48);
     private static final Color FOREGROUND_COLOR = new Color(172, 172, 172);
-    private static final Color ACCENT_COLOR = new Color(0, 0, 0); // Cornflower Blue
-    private static final Color BUTTON_COLOR = new Color(0, 0, 0, 171);
+    private static final Color ACCENT_COLOR = new Color(100, 149, 237); // Cornflower Blue
+    private static final Color BUTTON_COLOR = new Color(70, 70, 70);
     private static final Font INPUT_FONT = new Font("Consolas", Font.BOLD, 16);
     private static final Font BUTTON_FONT = new Font("Consolas", Font.BOLD, 14);
 
@@ -36,8 +37,8 @@ public class SettingsDialog extends JDialog {
     }
 
     public SettingsDialog(JFrame parent, ModelParams initialParams, String initialModelName) {
-        super(parent, "LLM Settings", true); // Modal dialog
-        setSize(400, 350);
+        super(parent, "AI Settings", true); // Modal dialog
+        setSize(424, 356);
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
         getContentPane().setBackground(BACKGROUND_COLOR);
@@ -60,6 +61,14 @@ public class SettingsDialog extends JDialog {
         temperatureSlider.setMinorTickSpacing(5);
         temperatureSlider.setPaintTicks(true);
         temperatureSlider.setPaintLabels(true);
+        // Custom labels for Temperature
+        java.util.Hashtable<Integer, JLabel> tempLabelTable = new java.util.Hashtable<>();
+        tempLabelTable.put(0, new JLabel("0.0"));
+        tempLabelTable.put(25, new JLabel("0.25"));
+        tempLabelTable.put(50, new JLabel("0.5"));
+        tempLabelTable.put(75, new JLabel("0.75"));
+        tempLabelTable.put(100, new JLabel("1.0"));
+        temperatureSlider.setLabelTable(tempLabelTable);
         settingsPanel.add(temperatureSlider);
 
         // TopP Slider
@@ -71,6 +80,14 @@ public class SettingsDialog extends JDialog {
         topPSlider.setMinorTickSpacing(5);
         topPSlider.setPaintTicks(true);
         topPSlider.setPaintLabels(true);
+        // Custom labels for Top P
+        java.util.Hashtable<Integer, JLabel> topPLabelTable = new java.util.Hashtable<>();
+        topPLabelTable.put(0, new JLabel("0.0"));
+        topPLabelTable.put(25, new JLabel("0.25"));
+        topPLabelTable.put(50, new JLabel("0.5"));
+        topPLabelTable.put(75, new JLabel("0.75"));
+        topPLabelTable.put(100, new JLabel("1.0"));
+        topPSlider.setLabelTable(topPLabelTable);
         settingsPanel.add(topPSlider);
 
         // Max Tokens Field
@@ -87,14 +104,14 @@ public class SettingsDialog extends JDialog {
 
         // Model Name Dropdown
         settingsPanel.add(createLabel("Model Name:"));
-        String[] models = {"google/gemma-3-1b", "qwen/qwen3-4b"}; // Hardcoded models
+        String[] models = {"google/gemma-3-1b", "qwen/qwen3-14b"}; // Hardcoded models
         modelSelectionComboBox = new JComboBox<>(models);
         modelSelectionComboBox.setSelectedItem(initialModelName);
         modelSelectionComboBox.setBackground(BUTTON_COLOR);
         modelSelectionComboBox.setForeground(FOREGROUND_COLOR);
         modelSelectionComboBox.setFont(INPUT_FONT);
         modelSelectionComboBox.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(ACCENT_COLOR, 1), // Accent border
+                BorderFactory.createLineBorder(ACCENT_COLOR, 2), // Accent border
                 BorderFactory.createEmptyBorder(5, 10, 5, 10) // Inner padding
         ));
         settingsPanel.add(modelSelectionComboBox);
@@ -143,6 +160,10 @@ public class SettingsDialog extends JDialog {
             double temperature = (double) temperatureSlider.getValue() / 100.0;
             double topP = (double) topPSlider.getValue() / 100.0;
             int maxTokens = Integer.parseInt(maxTokensField.getText());
+            if (maxTokens <= 0) {
+                JOptionPane.showMessageDialog(this, "Max Tokens must be a positive integer.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             String modelName = (String) modelSelectionComboBox.getSelectedItem();
 
             currentModelParams = new ModelParams.Builder()
@@ -151,6 +172,7 @@ public class SettingsDialog extends JDialog {
                     .setTopP(topP)
                     .build();
             currentModelName = modelName;
+            settingsApplied = true;
 
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Invalid number format for Max Tokens.", "Input Error", JOptionPane.ERROR_MESSAGE);
@@ -163,5 +185,9 @@ public class SettingsDialog extends JDialog {
 
     public String getAppliedModelName() {
         return currentModelName;
+    }
+
+    public boolean areSettingsApplied() {
+        return settingsApplied;
     }
 }

@@ -1,6 +1,9 @@
 
 package com.aiforjava.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -11,20 +14,19 @@ import java.io.StringWriter;
  */
 public class ExceptionHandler {
 
+    private static final Logger logger = LoggerFactory.getLogger(ExceptionHandler.class);
+
     /**
-     * Handles a given exception by printing its message and stack trace to the standard error stream.
+     * Handles a given exception by logging its message and stack trace using SLF4J.
      *
      * @param e The exception to handle. It should not be null.
      */
     public static void handle(Exception e) {
         if (e == null) {
-            System.err.println("An attempt was made to handle a null exception.");
+            logger.error("An attempt was made to handle a null exception.");
             return;
         }
-        System.err.println("An error occurred: " + e.getClass().getName() + " - " + e.getMessage());
-        StringWriter sw = new StringWriter();
-        e.printStackTrace(new PrintWriter(sw));
-        System.err.println(sw.toString());
+        logger.error("An error occurred: {} - {}", e.getClass().getName(), e.getMessage(), e);
     }
 }
 

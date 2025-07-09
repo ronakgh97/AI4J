@@ -2,6 +2,7 @@
 package com.aiforjava.llm.Chat.HighLevel;
 
 import com.aiforjava.exception.LLMServiceException;
+import com.aiforjava.exception.LLMParseException;
 import com.aiforjava.llm.Chat.LowLevel.ChatServices_LowLevel;
 import com.aiforjava.llm.ModelParams;
 import com.aiforjava.llm.StreamHandler;
@@ -86,7 +87,7 @@ public class ChatServices {
      * @param handler The stream handler to process the response chunks.
      * @throws LLMServiceException If an error occurs during the chat completion.
      */
-    public void chatStream(String userMessage, StreamHandler handler) throws LLMServiceException {
+    public void chatStream(String userMessage, StreamHandler handler) throws LLMServiceException, LLMParseException {
         chatStream(userMessage, defaultParams, handler);
     }
 
@@ -98,7 +99,7 @@ public class ChatServices {
      * @param handler The stream handler to process the response chunks.
      * @throws LLMServiceException If an error occurs during the chat completion.
      */
-    public void chatStream(String userMessage, ModelParams params, StreamHandler handler) throws LLMServiceException {
+    public void chatStream(String userMessage, ModelParams params, StreamHandler handler) throws LLMServiceException, LLMParseException {
         memory.addMessage(new Message(MessageRole.USER, promptTemplate.formatUserMessage(userMessage)));
         StringBuilder response = new StringBuilder();
         llm.generateStream(memory.getMessagesList(), params, content -> {
