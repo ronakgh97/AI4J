@@ -1,6 +1,7 @@
 package com.aiforjava.demo;
 
-import com.aiforjava.llm.ModelParams;
+import com.aiforjava.llm.models.ModelParams;
+import com.aiforjava.llm.models.ModelRegistry;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -38,7 +39,7 @@ public class SettingsDialog extends JDialog {
 
     public SettingsDialog(JFrame parent, ModelParams initialParams, String initialModelName) {
         super(parent, "AI Settings", true); // Modal dialog
-        setSize(424, 356);
+        setSize(512, 454);
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
         getContentPane().setBackground(BACKGROUND_COLOR);
@@ -49,7 +50,7 @@ public class SettingsDialog extends JDialog {
         JPanel settingsPanel = new JPanel(new GridLayout(5, 2, 10, 10));
         settingsPanel.setBackground(BACKGROUND_COLOR);
         settingsPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(ACCENT_COLOR), "LLM Settings",
+                BorderFactory.createLineBorder(ACCENT_COLOR), "AI Settings",
                 TitledBorder.LEFT, TitledBorder.TOP, BUTTON_FONT, FOREGROUND_COLOR));
 
         // Temperature Slider
@@ -104,14 +105,14 @@ public class SettingsDialog extends JDialog {
 
         // Model Name Dropdown
         settingsPanel.add(createLabel("Model Name:"));
-        String[] models = {"google/gemma-3-1b", "qwen/qwen3-14b"}; // Hardcoded models
+        String[] models = ModelRegistry.getAllModelNames().toArray(new String[0]);
         modelSelectionComboBox = new JComboBox<>(models);
         modelSelectionComboBox.setSelectedItem(initialModelName);
         modelSelectionComboBox.setBackground(BUTTON_COLOR);
         modelSelectionComboBox.setForeground(FOREGROUND_COLOR);
         modelSelectionComboBox.setFont(INPUT_FONT);
         modelSelectionComboBox.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(ACCENT_COLOR, 2), // Accent border
+                BorderFactory.createLineBorder(ACCENT_COLOR, 3), // Accent border
                 BorderFactory.createEmptyBorder(5, 10, 5, 10) // Inner padding
         ));
         settingsPanel.add(modelSelectionComboBox);

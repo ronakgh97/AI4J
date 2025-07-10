@@ -2,10 +2,10 @@ package com.aiforjava.demo;
 
 import com.aiforjava.exception.LLMServiceException;
 import com.aiforjava.llm.Chat.LowLevel.ChatServices_LowLevel;
-import com.aiforjava.llm.DefaultHttpClient;
-import com.aiforjava.llm.DefaultStreamResponseParser;
-import com.aiforjava.llm.LLM_Client;
-import com.aiforjava.llm.ModelParams;
+import com.aiforjava.llm.client.DefaultHttpClient;
+import com.aiforjava.llm.streams.DefaultStreamResponseParser;
+import com.aiforjava.llm.client.LLM_Client;
+import com.aiforjava.llm.models.ModelParams;
 import com.aiforjava.message.Message;
 import com.aiforjava.message.MessageRole;
 
@@ -27,9 +27,7 @@ public class Welcome {
 
             String systemPrompt =
                     "Your Task is generate a Welcome Message for User," +
-                            "Start with Welcome to AI4J Demo Chatbot...,"+
-                            "This is the project named AI4J," +
-                            "This is a Demo Chatbot based on JavaSwing GUI";
+                            "Start with Welcome to AI4J Demo Chatbot...";
 
             String userPrompt =
                     "Welcome the User in warm, friendly way, Dont show options, only the message";
@@ -38,7 +36,7 @@ public class Welcome {
                     new Message(MessageRole.SYSTEM, systemPrompt),
                     new Message(MessageRole.USER, userPrompt));
 
-            return llm.generate(messageList, params);
+            return llm.generate(messageList, params).getContent();
 
         }catch (LLMServiceException e){
             return "Welcome to JavaSwing ChatBot";

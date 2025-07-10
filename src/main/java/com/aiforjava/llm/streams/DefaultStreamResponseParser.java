@@ -1,4 +1,4 @@
-package com.aiforjava.llm;
+package com.aiforjava.llm.streams;
 
 import com.aiforjava.exception.LLMParseException;
 import com.fasterxml.jackson.databind.JsonNode;

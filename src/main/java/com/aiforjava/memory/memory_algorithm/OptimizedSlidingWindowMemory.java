@@ -1,5 +1,6 @@
-package com.aiforjava.memory;
+package com.aiforjava.memory.memory_algorithm;
 
+import com.aiforjava.memory.MemoryManager;
 import com.aiforjava.message.Message;
 
 import java.util.ArrayDeque;

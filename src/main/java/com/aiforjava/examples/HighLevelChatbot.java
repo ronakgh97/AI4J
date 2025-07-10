@@ -1,16 +1,14 @@
 package com.aiforjava.examples;
 
-import com.aiforjava.llm.DefaultHttpClient;
-import com.aiforjava.llm.DefaultStreamResponseParser;
-import com.aiforjava.llm.LLM_Client;
-import com.aiforjava.llm.ModelParams;
+import com.aiforjava.llm.client.DefaultHttpClient;
+import com.aiforjava.llm.streams.DefaultStreamResponseParser;
+import com.aiforjava.llm.client.LLM_Client;
+import com.aiforjava.llm.models.ModelParams;
 import com.aiforjava.llm.Chat.HighLevel.ChatServices;
 import com.aiforjava.llm.Chat.LowLevel.ChatServices_LowLevel;
 import com.aiforjava.llm.Prompt.PromptTemplate;
 import com.aiforjava.memory.MemoryManager;
-import com.aiforjava.memory.SlidingWindowMemory;
-import com.aiforjava.memory.OptimizedSlidingWindowMemory;
-import com.aiforjava.memory.ChatLogs.CachedFileMemory;
+
 import java.time.Duration;
 import java.util.Scanner;
 
@@ -48,7 +46,7 @@ public class HighLevelChatbot {
         // Initialize memory manager (Sliding Window Memory)
         // MemoryManager memory = new SlidingWindowMemory(MEMORY_WINDOW_SIZE);
         // MemoryManager memory = new OptimizedSlidingWindowMemory(MEMORY_WINDOW_SIZE);
-        MemoryManager memory = new com.aiforjava.memory.ChatLogs.CachedFileMemory();
+        MemoryManager memory = new com.aiforjava.memory.ChatLogger.CachedFileMemory();
 
         // Initialize prompt template
         PromptTemplate promptTemplate = new PromptTemplate("You are a helpful AI assistant. Keep your responses concise and to the point.", "User: {user_message}\nAI:");

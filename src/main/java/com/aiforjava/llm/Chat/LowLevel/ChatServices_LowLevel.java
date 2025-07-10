@@ -2,8 +2,13 @@ package com.aiforjava.llm.Chat.LowLevel;
 
 import com.aiforjava.exception.LLMParseException;
 import com.aiforjava.exception.LLMServiceException;
-import com.aiforjava.llm.*;
+import com.aiforjava.llm.client.LLM_Client;
+import com.aiforjava.llm.client.LLMResponse;
+import com.aiforjava.llm.models.ModelParams;
+import com.aiforjava.llm.streams.StreamHandler;
 import com.aiforjava.message.Message;
+import com.aiforjava.message.files.ImagePart;
+import com.aiforjava.message.files.TextPart;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,6 +16,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.List;
+import com.aiforjava.memory.cache.LLMCacheManager;
 
 /**
  * Provides low-level chat services for interacting with Large Language Models (LLMs).
@@ -22,6 +28,7 @@ public class ChatServices_LowLevel {
     private final LLM_Client client;
     private final String modelName;
     private final ObjectMapper mapper = new ObjectMapper();
+    private final LLMCacheManager cacheManager;
 
     /**
      * Constructs a new ChatServices_LowLevel instance.
@@ -30,8 +37,20 @@ public class ChatServices_LowLevel {
      * @param modelName The name of the LLM model to be used for chat completions (e.g., "gemma-3-4b-it").
      */
     public ChatServices_LowLevel(LLM_Client client, String modelName) {
+        this(client, modelName, null);
+    }
+
+    /**
+     * Constructs a new ChatServices_LowLevel instance with an optional cache manager.
+     *
+     * @param client The LLM client responsible for sending HTTP requests to the LLM.
+     * @param modelName The name of the LLM model to be used for chat completions (e.g., "gemma-3-4b-it").
+     * @param cacheManager An optional LLMCacheManager for caching LLM responses.
+     */
+    public ChatServices_LowLevel(LLM_Client client, String modelName, LLMCacheManager cacheManager) {
         this.client = client;
         this.modelName = modelName;
+        this.cacheManager = cacheManager;
     }
 
     /**
@@ -43,7 +62,7 @@ public class ChatServices_LowLevel {
      * @return The generated response content from the LLM.
      * @throws LLMServiceException If any service-related error occurs during the request.
      */
-    public String generate(List<Message> messages, ModelParams params) throws LLMServiceException {
+    public LLMResponse generate(List<Message> messages, ModelParams params) throws LLMServiceException {
         try {
             String requestJson = buildRequest(messages, params, false);
             String response = client.sendRequest("v1/chat/completions", requestJson);
@@ -51,6 +70,64 @@ public class ChatServices_LowLevel {
         } catch (LLMServiceException e) {
             throw e;
         }
+    }
+
+    /**
+     * Generates a chat completion response from the LLM, utilizing a cache if available.
+     * This method constructs the JSON request based on the provided messages and model parameters.
+     * If a cached response is found, it is returned directly; otherwise, an LLM call is made
+     * and the response is stored in the cache.
+     *
+     * @param messages A list of Message objects representing the conversation history.
+     * @param params ModelParams object containing parameters like temperature, max tokens, etc.
+     * @return The generated response content from the LLM.
+     * @throws LLMServiceException If any service-related error occurs during the request.
+     */
+    public LLMResponse generateWithCache(List<Message> messages, ModelParams params) throws LLMServiceException {
+        String cacheKey = generateCacheKey(messages, params);
+        if (cacheManager != null) {
+            LLMResponse cachedResponse = cacheManager.get(cacheKey);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+        }
+
+        LLMResponse llmResponse = generate(messages, params); // Use the existing generate method
+
+        if (cacheManager != null) {
+            cacheManager.put(cacheKey, llmResponse);
+        }
+        return llmResponse;
+    }
+
+    /**
+     * Generates a unique cache key based on the messages and model parameters.
+     * This key is used to store and retrieve responses from the cache.
+     *
+     * @param messages A list of Message objects.
+     * @param params ModelParams object.
+     * @return A string representing the cache key.
+     */
+    private String generateCacheKey(List<Message> messages, ModelParams params) {
+        // A simple concatenation for demonstration. For production, consider a more robust hashing.
+        StringBuilder keyBuilder = new StringBuilder();
+        for (Message msg : messages) {
+            keyBuilder.append(msg.getRole().name()).append(":");
+            for (com.aiforjava.message.MessagePart part : msg.getContentParts()) {
+                if (part instanceof TextPart) {
+                    keyBuilder.append(((TextPart) part).getText());
+                } else if (part instanceof ImagePart) {
+                    // For image parts, use a hash of the image data or a unique identifier
+                    keyBuilder.append("[IMAGE]"); // Placeholder for now
+                }
+            }
+            keyBuilder.append("|");
+        }
+        keyBuilder.append("temp:").append(params.getTemperature());
+        keyBuilder.append("maxTokens:").append(params.getMaxTokens());
+        keyBuilder.append("topP:").append(params.getTopP());
+        // Add other relevant parameters to the key
+        return keyBuilder.toString();
     }
 
     /**
@@ -112,9 +189,20 @@ public class ChatServices_LowLevel {
 
         ArrayNode messagesNode = request.putArray("messages");
         for (Message msg : messages) {
-            messagesNode.add(mapper.createObjectNode()
-                    .put("role", msg.getRole().name().toLowerCase())
-                    .put("content", msg.getContent()));
+            ObjectNode messageContentNode = mapper.createObjectNode();
+            messageContentNode.put("role", msg.getRole().name().toLowerCase());
+
+            ArrayNode contentArray = messageContentNode.putArray("content");
+            for (com.aiforjava.message.MessagePart part : msg.getContentParts()) {
+                if (part instanceof TextPart) {
+                    contentArray.add(mapper.createObjectNode()
+                            .put("type", "text")
+                            .put("text", ((TextPart) part).getText()));
+                } else if (part instanceof ImagePart) {
+                    contentArray.add(mapper.valueToTree(part)); // Jackson will handle ImagePart's JsonCreator
+                }
+            }
+            messagesNode.add(messageContentNode);
         }
 
         return request.toString();
@@ -128,7 +216,7 @@ public class ChatServices_LowLevel {
      * @return The extracted content of the LLM's response.
      * @throws LLMParseException if the response format is invalid or content cannot be extracted.
      */
-    private String parseResponse(String response) throws LLMParseException {
+    private LLMResponse parseResponse(String response) throws LLMParseException {
         try {
             JsonNode root = mapper.readTree(response);
 
@@ -140,7 +228,17 @@ public class ChatServices_LowLevel {
             if (!firstChoice.has("message") || !firstChoice.path("message").has("content"))
                 throw new LLMParseException("Invalid response: missing message content");
 
-            return firstChoice.path("message").path("content").asText();
+            String content = firstChoice.path("message").path("content").asText();
+
+            Integer totalTokens = null;
+            if (root.has("usage")) {
+                JsonNode usageNode = root.path("usage");
+                if (usageNode.has("total_tokens")) {
+                    totalTokens = usageNode.path("total_tokens").asInt();
+                }
+            }
+
+            return new LLMResponse(content, totalTokens);
         } catch (JsonProcessingException e) {
             throw new LLMParseException("Failed to parse LLM response: " + e.getMessage(), e);
         }

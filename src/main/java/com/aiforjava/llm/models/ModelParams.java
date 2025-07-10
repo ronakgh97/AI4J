@@ -1,4 +1,4 @@
-package com.aiforjava.llm;
+package com.aiforjava.llm.models;
 
 /**
  * ModelParams is a data class that encapsulates various parameters used to control the behavior
