@@ -23,8 +23,7 @@ public class ExceptionHandler {
      */
     public static void handle(Exception e) {
         if (e == null) {
-            logger.error("An attempt was made to handle a null exception.");
-            return;
+            throw new IllegalArgumentException("Cannot handle a null exception. An exception object must be provided.");
         }
         logger.error("An error occurred: {} - {}", e.getClass().getName(), e.getMessage(), e);
     }

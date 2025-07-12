@@ -1,5 +1,5 @@
 
-package com.aiforjava.llm;
+package com.aiforjava.llm.streams;
 
 /**
  * The StreamHandler interface is a functional interface designed to process

@@ -1,6 +1,7 @@
 
-package com.aiforjava.memory;
+package com.aiforjava.memory.memory_algorithm;
 
+import com.aiforjava.memory.MemoryManager;
 import com.aiforjava.message.Message;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -11,6 +12,9 @@ import java.util.List;
  * a conversation history using a fixed-size sliding window. When the number of messages
  * exceeds the maximum allowed, the oldest message is automatically removed to make space
  * for new ones. This is useful for managing context in chatbots while limiting memory usage.
+ * <p>
+ * Note: For most use cases, {@link OptimizedSlidingWindowMemory} is recommended over this class
+ * for new implementations due to its more efficient use of {@link java.util.Deque}.
  */
 public class SlidingWindowMemory implements MemoryManager {
     // The maximum number of messages to retain in memory.

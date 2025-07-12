@@ -11,7 +11,7 @@ AI4J offers a rich set of features to empower your LLM-powered applications:
 ### Core LLM Interaction APIs
 
 *   **Low-Level Chat API (`ChatServices_LowLevel`):** Provides direct, stateless interaction with LLM chat completion endpoints. Ideal for fine-grained control over requests and raw JSON payload manipulation.
-*   **High-Level Chat API (`ChatServices`):** A higher-level abstraction that simplifies building stateful chatbots by automatically managing conversational context and integrating with memory managers and prompt templates.
+*   **High-Level Chat API (`ChatServices`):** A higher-level abstraction that simplifies building stateful chatbots by automatically managing conversational context and integrating with memory managers and prompt templates. It also includes functionality for generating image descriptions for multimodal messages and a `reset()` method to clear the conversation history.
 
 ### LLM Client & Connectivity
 
@@ -19,11 +19,13 @@ AI4J offers a rich set of features to empower your LLM-powered applications:
     *   Configurable base URLs and API endpoints.
     *   Customizable request timeouts.
     *   API key authentication for online LLM providers (e.g., Gemini, OpenAI).
-    *   Option to use the base URL as the full endpoint URI for specific API structures.
+    *   Option to use the base URL as the full endpoint URI for specific API structures (`useBaseUrlAsEndpoint`).
 *   **Streaming Support:** Efficiently handles LLM responses as they are generated, providing a smooth, real-time user experience.
+    *   **Synchronous and Asynchronous Streaming:** Provides both `sendStreamRequest` for blocking stream processing and `sendStreamRequestAsync` for non-blocking, asynchronous stream handling using `CompletableFuture` and `ScheduledExecutorService`.
     *   **Custom Stream Handling:** Utilizes `StreamHandler` for processing incoming content chunks.
     *   **Flexible Stream Response Parsing:** The `StreamResponseParser` interface (with `DefaultStreamResponseParser` and `WordStreamHandler`) allows for custom parsing of diverse LLM streaming response formats.
     *   **Configurable Streaming Speed:** Control the speed of streamed responses using `streamDelayMillis` for a smoother output.
+    *   **Resource Management:** `DefaultHttpClient` now implements `AutoCloseable` to ensure proper shutdown of internal resources like `ScheduledExecutorService`.
 
 ### Memory Management
 
@@ -33,11 +35,27 @@ AI4J provides flexible and optimized memory management strategies to maintain co
 *   **`SlidingWindowMemory`:** Maintains a fixed-size window of the most recent messages, discarding older ones to keep context relevant.
 *   **`OptimizedSlidingWindowMemory`:** An improved, `Deque`-based implementation of sliding window memory for better performance.
 *   **`FileMemory`:** Persists chat history to a file, enabling conversations to be resumed across application sessions.
-*   **`CachedFileMemory`:** An enhanced file-based memory solution with in-memory caching for improved performance and efficient access to chat logs.
+*   **`CachedFileMemory`:** An enhanced file-based memory solution with in-memory caching for improved performance and efficient access to chat logs. It offers:
+    *   `addMessage(Message)`: Adds a message to the cache without immediate file persistence.
+    *   `addMessageAndSave(Message)`: Adds a message to the cache and immediately saves to file.
+    *   `flush()`: Explicitly writes cached messages to the file.
+*   **`SlidingWindowMemory`:** Maintains a fixed-size window of the most recent messages, discarding older ones to keep context relevant. Note: For most use cases, {@link OptimizedSlidingWindowMemory} is recommended for new implementations due to its more efficient use of `Deque`.
+
+### Caching
+
+AI4J now supports caching of LLM responses to reduce redundant API calls and improve performance.
+
+*   **`LLMCacheManager`:** Manages the Caffeine cache, providing methods to store, retrieve, and invalidate LLM responses.
+*   **Cached LLM Calls:** The `ChatServices_LowLevel` class now includes a `generateWithCache` method that leverages the `LLMCacheManager` to serve responses from cache when available.
 
 ### Message Structure
 
 *   **`Message` & `MessageRole`:** Clearly defined classes for representing conversational messages, including roles like `SYSTEM`, `USER`, and `ASSISTANT`.
+*   **Multimodal Messaging:** The `Message` class now supports multimodal content, allowing for a combination of text and images within a single message.
+    *   **`MessagePart`:** An interface defining a part of a multimodal message.
+    *   **`TextPart`:** Represents the text content within a multimodal message.
+    *   **`ImagePart`:** Represents image content (Base64 encoded) within a multimodal message.
+    *   **`ImageEncoder`:** A utility for encoding image files into Base64 strings for inclusion in multimodal messages.
 
 ### Prompt Engineering
 
@@ -45,7 +63,8 @@ AI4J provides flexible and optimized memory management strategies to maintain co
 
 ### Model Parameter Configuration
 
-*   **`ModelParams`:** Easily configure LLM parameters such as temperature, maximum tokens, and top-p. Includes robust input validation to ensure valid configurations.
+*   **`ModelParams`:** Easily configure LLM parameters such as temperature, maximum tokens, top-p, frequency penalty, and presence penalty. Includes robust input validation to ensure valid configurations.
+*   **LLM Thinking Control:** For models that support it, the framework allows control over the LLM's internal 'thinking' process. By default, thinking is enabled. To disable it for a specific prompt, the `/no_think` suffix can be used (managed by the UI).
 
 ### Robust Error Handling & Logging
 
@@ -54,6 +73,8 @@ AI4J provides flexible and optimized memory management strategies to maintain co
     *   `LLMParseException`: Errors during LLM response parsing.
     *   `LLMNetworkException`: Network communication errors.
     *   `Exception_Timeout`: Request timeout errors.
+    *   `LLMStreamProcessingException`: Errors during asynchronous stream processing.
+    *   `MemoryAccessException`: Errors related to memory access and persistence operations.
 *   **`ExceptionHandler`:** Centralized exception handling.
 *   **SLF4J Integration:** Uses SLF4J for flexible and configurable logging of errors and application events.
 
@@ -61,6 +82,7 @@ AI4J provides flexible and optimized memory management strategies to maintain co
 
 *   **`SwingChatbot`:** A high-level, Java Swing-based graphical user interface demonstrating the framework's capabilities.
     *   **Enhanced UI/UX:** Features streamlined user message display, efficient input field clearing, and improved focus handling.
+    *   **Dynamic UI Elements:** UI elements like the "Attach Image" button and "Think" checkbox are dynamically enabled/disabled based on the capabilities of the currently selected LLM model, as defined in the `ModelRegistry`.
 *   **`SettingsDialog`:** A dynamic settings dialog integrated with `SwingChatbot` for on-the-fly adjustment of LLM parameters (temperature, max tokens, top-p) and model selection.
     *   **Visual Consistency:** Achieves a cohesive look and feel with the main chatbot UI.
     *   **Improved Validation:** Robust input validation for parameters like 'Max Tokens'.
@@ -148,14 +170,22 @@ Demonstrates using `FileMemory` to persist chat history across sessions. Chat lo
 
 ### 6. Raw API Control (`RawChatbot.java`)
 
-Showcases the lowest level of interaction, allowing direct sending of raw JSON requests to the LLM endpoint for maximum flexibility.
+Showcases the lowest level of interaction, allowing direct sending of raw JSON requests to the LLM endpoint for maximum flexibility, including both non-streaming (`generateRaw`) and streaming (`generateStreamRaw`) requests.
 
 ```java
 // Example snippet (simplified)
-ChatServices_LowLevel llm = new ChatServices_LowLevel(new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90), null), "gemma-3-4b-it");
+ChatServices_LowLevel llm = new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90), null), "gemma-3-4b-it");
 String rawRequest = "{ \"model\": \"gemma-3-4b-it\", \"messages\": [ { \"role\": \"user\", \"content\": \"Hello\" } ] }";
 String rawResponse = llm.generateRaw("v1/chat/completions", rawRequest);
 System.out.println(rawResponse);
+```
+
+### 7. Multimodal Chatbot (`MultimodalChatbot.java`)
+
+Demonstrates sending text messages with image attachments and controlling the LLM's 'thinking' behavior.
+
+```bash
+mvn exec:java -Dexec.mainClass="com.aiforjava.examples.MultimodalChatbot"
 ```
 
 ## Dependencies
@@ -168,24 +198,9 @@ The project uses the following key dependencies, managed by Maven:
 
 ## Recent Changes
 
-*   **Optimized Memory Management:** Introduced `OptimizedSlidingWindowMemory` and `CachedFileMemory` for improved performance and flexibility in managing chat history.
-*   **Configurable Streaming Output:** Added `streamDelayMillis` to `DefaultHttpClient` for controlling the smoothness of streamed LLM responses.
-*   **Flexible Stream Response Parsing:** Implemented `StreamResponseParser` and `DefaultStreamResponseParser` to allow for custom parsing of LLM streaming formats.
-*   **Improved Model Parameter Validation:** Added input validation to `ModelParams.Builder` for more robust configuration.
-*   **Enhanced Error Logging:** Switched `ExceptionHandler` to use SLF4J for more flexible and configurable error logging.
-*   **Refactored HTTP Client:** Streamlined `DefaultHttpClient` by removing redundant methods and improving exception handling for streaming.
-*   **API Key Support:** The `DefaultHttpClient` now supports an `apiKey` for authenticating with online LLM providers.
-*   **Prompt Templating:** The high-level `ChatServices` now uses a `PromptTemplate` class to provide more flexibility in formatting system and user messages.
-*   **Improved Examples:** The examples have been updated to reflect the latest API changes and demonstrate new memory management options.
-*   **Documentation Updates:** The `README.md` has been updated to provide more accurate and comprehensive information.
-*   **Enhanced SwingChatbot UI/UX:**
-    *   Streamlined user message display and input field clearing for a smoother chat experience.
-    *   Improved focus handling in the input field after interacting with the settings dialog.
-*   **Refined Settings Dialog:**
-    *   Achieved visual consistency with the main chatbot UI's color scheme.
-    *   Implemented robust validation for 'Max Tokens'.
-    *   Provided more intuitive decimal labels (0.0-1.0) for Temperature and Top P sliders.
-    *   Ensured "LLM settings updated!" message only appears when settings are actually applied.
+*   **Caching:** Integrated Caffeine to provide caching for LLM responses, reducing latency and API costs. Introduced `LLMCacheManager` and `generateWithCache` method in `ChatServices_LowLevel`.
+*   **Resource Management:** `DefaultHttpClient` now implements `AutoCloseable` to ensure proper shutdown of internal resources.
+*   **Enhanced Memory Management:** `CachedFileMemory` now provides `addMessage` (non-saving), `addMessageAndSave` (immediate saving), and `flush()` methods for flexible persistence control. Clarified recommendation for `OptimizedSlidingWindowMemory` over `SlidingWindowMemory`.
 
 ## Contributing
 

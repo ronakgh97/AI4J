@@ -1,11 +1,10 @@
 package com.aiforjava.examples;
 
 import com.aiforjava.exception.ExceptionHandler;
-import com.aiforjava.exception.LLMServiceException;
 import com.aiforjava.llm.Chat.LowLevel.ChatServices_LowLevel;
-import com.aiforjava.llm.DefaultHttpClient;
-import com.aiforjava.llm.DefaultStreamResponseParser;
-import com.aiforjava.llm.LLM_Client;
+import com.aiforjava.llm.client.DefaultHttpClient;
+import com.aiforjava.llm.streams.DefaultStreamResponseParser;
+import com.aiforjava.llm.client.LLM_Client;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;

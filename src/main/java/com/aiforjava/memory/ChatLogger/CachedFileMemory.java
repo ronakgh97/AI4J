@@ -1,6 +1,5 @@
-package com.aiforjava.memory.ChatLogs;
+package com.aiforjava.memory.ChatLogger;
 
-import com.aiforjava.exception.LLMParseException;
 import com.aiforjava.memory.MemoryManager;
 import com.aiforjava.message.Message;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -58,12 +57,33 @@ public class CachedFileMemory implements MemoryManager {
         loadHistoryFromFile();
     }
 
+    /**
+     * Adds a new message to the in-memory cache.
+     * The changes are not immediately persisted to the file; call {@link #flush()} to save them.
+     *
+     * @param message The Message object to be added.
+     */
     @Override
     public void addMessage(Message message) {
         lock.writeLock().lock();
         try {
             messagesCache.add(message);
-            saveHistoryToFile(); // Save on every add for simplicity, can be optimized for periodic flush
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Adds a new message to the in-memory cache and immediately persists the updated history to the file.
+     * This ensures data is saved after each message addition.
+     *
+     * @param message The Message object to be added.
+     */
+    public void addMessageAndSave(Message message) {
+        lock.writeLock().lock();
+        try {
+            messagesCache.add(message);
+            saveHistoryToFile(); // Save on every add for simplicity
         } finally {
             lock.writeLock().unlock();
         }
@@ -85,6 +105,20 @@ public class CachedFileMemory implements MemoryManager {
         try {
             messagesCache.clear();
             saveHistoryToFile(); // Clear file as well
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Flushes the current in-memory chat history to the JSON file.
+     * This method should be called periodically or on application shutdown
+     * to ensure that all changes are persisted.
+     */
+    public void flush() {
+        lock.writeLock().lock();
+        try {
+            saveHistoryToFile();
         } finally {
             lock.writeLock().unlock();
         }

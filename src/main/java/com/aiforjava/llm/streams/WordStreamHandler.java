@@ -1,4 +1,4 @@
-package com.aiforjava.llm;
+package com.aiforjava.llm.streams;
 
 /**
  * A functional interface for handling streamed LLM responses on a word-by-word basis.

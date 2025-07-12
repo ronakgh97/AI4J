@@ -1,4 +1,6 @@
-package com.aiforjava.llm;
+package com.aiforjava.llm.client;
+
+import com.aiforjava.llm.streams.StreamHandler;
 
 /**
  * The LLM_Client interface defines the contract for interacting with Large Language Models (LLMs).

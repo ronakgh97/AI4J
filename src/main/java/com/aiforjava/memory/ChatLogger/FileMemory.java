@@ -1,11 +1,12 @@
 
-package com.aiforjava.memory.ChatLogs;
+package com.aiforjava.memory.ChatLogger;
 
 import com.aiforjava.memory.MemoryManager;
 import com.aiforjava.message.Message;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.aiforjava.exception.MemoryAccessException;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.IOException;
@@ -69,7 +70,7 @@ public class FileMemory implements MemoryManager {
         try {
             mapper.writeValue(historyFilePath.toFile(), messages);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write to history file: " + historyFilePath, e);
+            throw new MemoryAccessException("Failed to write to history file: " + historyFilePath, e);
         }
     }
 
@@ -87,8 +88,7 @@ public class FileMemory implements MemoryManager {
         try {
             return mapper.readValue(historyFilePath.toFile(), new TypeReference<List<Message>>() {});
         } catch (IOException e) {
-            System.err.println("Warning: Could not read chat history from " + historyFilePath + ". Starting with empty history. Error: " + e.getMessage());
-            return new ArrayList<>();
+            throw new MemoryAccessException("Failed to read from history file: " + historyFilePath, e);
         }
     }
 
