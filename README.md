@@ -39,7 +39,7 @@ AI4J provides flexible and optimized memory management strategies to maintain co
     *   `addMessage(Message)`: Adds a message to the cache without immediate file persistence.
     *   `addMessageAndSave(Message)`: Adds a message to the cache and immediately saves to file.
     *   `flush()`: Explicitly writes cached messages to the file.
-*   **`SlidingWindowMemory`:** Maintains a fixed-size window of the most recent messages, discarding older ones to keep context relevant. Note: For most use cases, {@link OptimizedSlidingWindowMemory} is recommended for new implementations due to its more efficient use of `Deque`.
+*   **`TokenCountingMemory`:** Manages memory based on the number of tokens, ensuring the conversation history does not exceed the LLM's context window.
 
 ### Caching
 
@@ -102,7 +102,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 *   **Java Development Kit (JDK) 24 or higher:** Ensure you have JDK 24 installed and configured.
 *   **Maven:** This project uses Maven for dependency management and building.
-*   **Local LLM Server (Optional but Recommended):** To run the examples, you'll need a local LLM server like [LM Studio](https://lmstudio.ai/) or [Ollama](https://ollama.ai/) running and serving a compatible model (e.g., `gemma-3-4b-it`) on `http://localhost:1234`. The `testEndpoints.java` file can be used to verify connectivity to `http://127.0.0.1:1234/v1/models`.
+*   **Local LLM Server (Optional but Recommended):** To run the examples, you'll need a local LLM server like [LM Studio](https://lmstudio.ai/) or [Ollama](https://ollama.ai/) running and serving a compatible model (e.g., `google/gemma-3-1b`) on `http://localhost:1234`. The `testEndpoints.java` file can be used to verify connectivity to `http://127.0.0.1:1234/v1/models`.
 
 ### Installation
 
@@ -116,6 +116,43 @@ These instructions will get you a copy of the project up and running on your loc
     mvn clean install
     ```
 
+## Project Structure
+
+*   `src/main/java/com/aiforjava/demo`: Contains the `SwingChatbot` GUI and related UI classes.
+*   `src/main/java/com/aiforjava/examples`: Includes various example classes demonstrating the framework's features.
+*   `src/main/java/com/aiforjava/llm`: The core of the framework, containing the LLM client, chat services, and model-related classes.
+*   `src/main/java/com/aiforjava/memory`: Provides different memory management strategies.
+*   `src/main/java/com/aiforjava/message`: Defines the message structure for conversations.
+*   `src/main/java/com/aiforjava/exception`: Contains custom exception classes for robust error handling.
+
+## Security Considerations
+
+### API Key Management
+
+**Warning:** Do not hardcode API keys in your source code. The `DefaultHttpClient` is designed to accept an API key, but it should be provided securely.
+
+**Recommendation:** Use environment variables or a secure configuration file to store and load your API keys.
+
+```java
+// Example of loading an API key from an environment variable
+String apiKey = System.getenv("MY_LLM_API_KEY");
+LLM_Client client = new DefaultHttpClient(LLM_BASE_URL, Duration.ofSeconds(90), apiKey);
+```
+
+## Configuration
+
+### Externalizing Configuration
+
+**Recommendation:** Avoid hardcoding values like base URLs and model names directly in the code. Instead, use a configuration file (e.g., `config.properties`) to store these values. This makes your application more flexible and easier to configure for different environments.
+
+## Testing
+
+### Importance of Unit Tests
+
+This project currently lacks a comprehensive suite of unit tests. For any serious application, it is crucial to add unit tests to ensure the reliability and maintainability of the codebase.
+
+**Recommendation:** Use a testing framework like JUnit 5 to write unit tests for the core components of the framework, such as the `ChatServices`, `MemoryManager` implementations, and `LLM_Client`.
+
 ## Usage Examples
 
 The `src/main/java/com.aiforjava.examples` directory contains several example chatbots demonstrating different features.
@@ -127,7 +164,7 @@ Demonstrates basic, stateless interaction with the LLM using the low-level API. 
 ```java
 // Example snippet (simplified)
 LLM_Client client = new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90), null);
-ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "gemma-3-4b-it");
+ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "google/gemma-3-1b");
 List<Message> messages = List.of(
     new Message(MessageRole.SYSTEM, "You are a helpful assistant."),
     new Message(MessageRole.USER, "Hello, how are you?")
@@ -144,7 +181,7 @@ Illustrates the high-level `ChatServices` with `SlidingWindowMemory` to maintain
 MemoryManager memory = new SlidingWindowMemory(20);
 PromptTemplate promptTemplate = new PromptTemplate("You are AI Assistant.", "{user_message}");
 ChatServices chatService = new ChatServices(
-    new ChatServices_LowLevel(new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90), null), "gemma-3-4b-it"),
+    new ChatServices_LowLevel(new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90), null), "google/gemma-3-1b"),
     memory,
     new ModelParams.Builder().build(),
     promptTemplate
@@ -174,8 +211,8 @@ Showcases the lowest level of interaction, allowing direct sending of raw JSON r
 
 ```java
 // Example snippet (simplified)
-ChatServices_LowLevel llm = new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90), null), "gemma-3-4b-it");
-String rawRequest = "{ \"model\": \"gemma-3-4b-it\", \"messages\": [ { \"role\": \"user\", \"content\": \"Hello\" } ] }";
+ChatServices_LowLevel llm = new ChatServices_LowLevel(new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90), null), "google/gemma-3-1b");
+String rawRequest = "{ "model": "google/gemma-3-1b", "messages": [ { "role": "user", "content": "Hello" } ] }";
 String rawResponse = llm.generateRaw("v1/chat/completions", rawRequest);
 System.out.println(rawResponse);
 ```
@@ -195,6 +232,7 @@ The project uses the following key dependencies, managed by Maven:
 *   **Jackson (`jackson-databind`, `jackson-datatype-jsr310`):** For efficient JSON processing (serialization and deserialization).
 *   **Apache HttpComponents Client 5 (`httpclient5`):** For making robust HTTP requests to LLM endpoints.
 *   **SLF4J (`slf4j-api`):** Simple Logging Facade for Java, providing flexible and configurable logging.
+*   **Caffeine (`caffeine`):** A high-performance caching library.
 
 ## Recent Changes
 
