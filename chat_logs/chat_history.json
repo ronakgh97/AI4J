@@ -1,1 +1,22 @@
-[ ]
+[ {
+  "role" : "SYSTEM",
+  "time" : 1752149876.586547600,
+  "contentParts" : [ {
+    "type" : "text",
+    "text" : "You are AI Assistant. Keep responses concise (1-2 sentences max)."
+  } ]
+}, {
+  "role" : "USER",
+  "time" : 1752149882.359789700,
+  "contentParts" : [ {
+    "type" : "text",
+    "text" : "User: hello\nAI:"
+  } ]
+}, {
+  "role" : "ASSISTANT",
+  "time" : 1752149892.240846800,
+  "contentParts" : [ {
+    "type" : "text",
+    "text" : "<think>\nOkay, the user said \"hello\". I need to respond politely and warmly. Let me think of a friendly greeting. Maybe \"Hello! How can I assist you today?\" That sounds good. It's concise and opens the door for them to ask anything.\n</think>\n\nHello! How can I assist you today?"
+  } ]
+} ]
