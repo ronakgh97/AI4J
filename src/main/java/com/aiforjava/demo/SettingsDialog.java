@@ -13,6 +13,8 @@ public class SettingsDialog extends JDialog {
 
     private JSlider temperatureSlider;
     private JSlider topPSlider;
+    private JSlider frequencyPenaltySlider;
+    private JSlider presencePenaltySlider;
     private JTextField maxTokensField;
     private JComboBox<String> modelSelectionComboBox;
     private JButton applyButton;
@@ -39,7 +41,7 @@ public class SettingsDialog extends JDialog {
 
     public SettingsDialog(JFrame parent, ModelParams initialParams, String initialModelName) {
         super(parent, "AI Settings", true); // Modal dialog
-        setSize(512, 454);
+        setSize(512, 512); // Increased height to accommodate new sliders
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
         getContentPane().setBackground(BACKGROUND_COLOR);
@@ -47,7 +49,7 @@ public class SettingsDialog extends JDialog {
         this.currentModelParams = initialParams;
         this.currentModelName = initialModelName;
 
-        JPanel settingsPanel = new JPanel(new GridLayout(5, 2, 10, 10));
+        JPanel settingsPanel = new JPanel(new GridLayout(7, 2, 10, 10)); // Changed to 7 rows
         settingsPanel.setBackground(BACKGROUND_COLOR);
         settingsPanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(ACCENT_COLOR), "AI Settings",
@@ -90,6 +92,42 @@ public class SettingsDialog extends JDialog {
         topPLabelTable.put(100, new JLabel("1.0"));
         topPSlider.setLabelTable(topPLabelTable);
         settingsPanel.add(topPSlider);
+
+        // Frequency Penalty Slider
+        settingsPanel.add(createLabel("Frequency Penalty:"));
+        frequencyPenaltySlider = new JSlider(-200, 200, (int) (initialParams.getFrequencyPenalty() * 100));
+        frequencyPenaltySlider.setBackground(BACKGROUND_COLOR);
+        frequencyPenaltySlider.setForeground(FOREGROUND_COLOR);
+        frequencyPenaltySlider.setMajorTickSpacing(100);
+        frequencyPenaltySlider.setMinorTickSpacing(25);
+        frequencyPenaltySlider.setPaintTicks(true);
+        frequencyPenaltySlider.setPaintLabels(true);
+        java.util.Hashtable<Integer, JLabel> freqLabelTable = new java.util.Hashtable<>();
+        freqLabelTable.put(-200, new JLabel("-2.0"));
+        freqLabelTable.put(-100, new JLabel("-1.0"));
+        freqLabelTable.put(0, new JLabel("0.0"));
+        freqLabelTable.put(100, new JLabel("1.0"));
+        freqLabelTable.put(200, new JLabel("2.0"));
+        frequencyPenaltySlider.setLabelTable(freqLabelTable);
+        settingsPanel.add(frequencyPenaltySlider);
+
+        // Presence Penalty Slider
+        settingsPanel.add(createLabel("Presence Penalty:"));
+        presencePenaltySlider = new JSlider(-200, 200, (int) (initialParams.getPresencePenalty() * 100));
+        presencePenaltySlider.setBackground(BACKGROUND_COLOR);
+        presencePenaltySlider.setForeground(FOREGROUND_COLOR);
+        presencePenaltySlider.setMajorTickSpacing(100);
+        presencePenaltySlider.setMinorTickSpacing(25);
+        presencePenaltySlider.setPaintTicks(true);
+        presencePenaltySlider.setPaintLabels(true);
+        java.util.Hashtable<Integer, JLabel> presLabelTable = new java.util.Hashtable<>();
+        presLabelTable.put(-200, new JLabel("-2.0"));
+        presLabelTable.put(-100, new JLabel("-1.0"));
+        presLabelTable.put(0, new JLabel("0.0"));
+        presLabelTable.put(100, new JLabel("1.0"));
+        presLabelTable.put(200, new JLabel("2.0"));
+        presencePenaltySlider.setLabelTable(presLabelTable);
+        settingsPanel.add(presencePenaltySlider);
 
         // Max Tokens Field
         settingsPanel.add(createLabel("Max Tokens:"));
@@ -160,6 +198,8 @@ public class SettingsDialog extends JDialog {
         try {
             double temperature = (double) temperatureSlider.getValue() / 100.0;
             double topP = (double) topPSlider.getValue() / 100.0;
+            double frequencyPenalty = (double) frequencyPenaltySlider.getValue() / 100.0;
+            double presencePenalty = (double) presencePenaltySlider.getValue() / 100.0;
             int maxTokens = Integer.parseInt(maxTokensField.getText());
             if (maxTokens <= 0) {
                 JOptionPane.showMessageDialog(this, "Max Tokens must be a positive integer.", "Input Error", JOptionPane.ERROR_MESSAGE);
@@ -171,6 +211,8 @@ public class SettingsDialog extends JDialog {
                     .setTemperature(temperature)
                     .setMaxTokens(maxTokens)
                     .setTopP(topP)
+                    .setFrequencyPenalty(frequencyPenalty)
+                    .setPresencePenalty(presencePenalty)
                     .build();
             currentModelName = modelName;
             settingsApplied = true;

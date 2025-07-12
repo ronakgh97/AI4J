@@ -24,7 +24,7 @@ public class SimpleChatbot {
 
         // 1. Initialize the LLM Client and Low-Level Chat Services
         LLM_Client client = new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90),"local", false, new DefaultStreamResponseParser(), 50L);
-        ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "qwen/qwen3-4b");
+        ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "qwen/qwen3-14b");
 
         // 2. Define Model Parameters
         ModelParams params = new ModelParams.Builder()
