@@ -39,9 +39,9 @@ public class SwingChatbot extends JFrame {
     private JButton attachImageButton; // Button to attach image
     private long startTime; // To store the start time of AI thinking
 
-    private static final String LLM_BASE_URL = "http://localhost:1234";
+    private static final String LLM_BASE_URL = "https://modest-literally-fish.ngrok-free.app";
     private static String MODEL_NAME = "google/gemma-3-1b"; // Or your preferred model
-    private static final int MAX_MEMORY = 2000; // Max tokens for memory (adjust as needed for your LLM's context window)
+    private static final int MAX_MEMORY = 1000; // Max messages for memory (adjust as needed for your LLM's context window)
 
     private ModelParams currentModelParams;
     private String currentModelName;
@@ -74,9 +74,10 @@ public class SwingChatbot extends JFrame {
 
     public SwingChatbot() {
         setTitle("AI4J Chatbot 😊");
-        setSize(1024, 512);
+        setSize(1024, 1024);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null); // Center the window
+        setResizable(false);
         getContentPane().setBackground(BACKGROUND_COLOR);
 
         // Initialize UI components
@@ -234,7 +235,10 @@ public class SwingChatbot extends JFrame {
         currentModelParams = new ModelParams.Builder()
                 .setTemperature(0.7)
                 .setMaxTokens(1024)
-                .setTopP(0.9).build();
+                .setTopP(0.9)
+                .setFrequencyPenalty(1.1)
+                .setPresencePenalty(0)
+                .build();
         currentModelName = "google/gemma-3-1b";
         initializeChatService();
 
@@ -503,11 +507,38 @@ public class SwingChatbot extends JFrame {
                 ex.printStackTrace();
             }
         }
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new SwingChatbot().setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            // Create a dummy JFrame to act as parent for the dialog
+            JFrame dummyFrame = new JFrame();
+            dummyFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            dummyFrame.setUndecorated(true); // Hide the dummy frame
+            dummyFrame.setSize(0, 0);
+            dummyFrame.setVisible(true);
+
+            // Show Login Dialog first
+            LoginDialog loginDialog = new LoginDialog(dummyFrame, AppConfig.USE_DATABASE_AUTH);
+            loginDialog.setVisible(true);
+
+            if (loginDialog.isLoggedIn()) {
+                // Proceed to Model Check Dialog if login is successful
+                ModelCheckDialog modelCheckDialog = new ModelCheckDialog(dummyFrame, LLM_BASE_URL);
+                modelCheckDialog.setVisible(true); // This will block until the dialog is closed
+
+                if (modelCheckDialog.canProceed()) {
+                    new SwingChatbot().setVisible(true);
+                } else if (modelCheckDialog.isCancelledByUser()) {
+                    // User closed the dialog without proceeding, just exit silently
+                    System.exit(0);
+                } else {
+                    // Model check failed for other reasons
+                    JOptionPane.showMessageDialog(null, "Model check failed. Exiting application.", "Error", JOptionPane.ERROR_MESSAGE);
+                    System.exit(0);
+                }
+            } else {
+                // Login was cancelled or failed
+                System.exit(0);
             }
+            dummyFrame.dispose(); // Dispose the dummy frame after use
         });
     }
 

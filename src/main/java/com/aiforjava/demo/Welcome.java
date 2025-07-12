@@ -16,7 +16,7 @@ public class Welcome {
 
     public static String generateWelcomeMessage() throws LLMServiceException {
         try{
-            LLM_Client client = new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90),"local", false, new DefaultStreamResponseParser(), 0L);
+            LLM_Client client = new DefaultHttpClient("http://modest-literally-fish.ngrok-free.app", Duration.ofSeconds(90),"local", false, new DefaultStreamResponseParser(), 5L);
             ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "google/gemma-3-1b");
 
             ModelParams params = new ModelParams.Builder()

@@ -23,7 +23,7 @@ public class ModelRegistry {
         registerModel("qwen/qwen3-4b", Set.of(ModelFeature.TEXT, ModelFeature.THINK));
 
         // Example: Register a multimodal model with vision capability
-        registerModel("google/gemma-3-4b", Set.of(ModelFeature.TEXT, ModelFeature.VISION));
+        //registerModel("google/gemma-3-4b", Set.of(ModelFeature.TEXT, ModelFeature.VISION));
 
         // Add more models and their capabilities as needed
     }
