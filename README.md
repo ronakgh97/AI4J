@@ -83,12 +83,20 @@ AI4J now supports caching of LLM responses to reduce redundant API calls and imp
 *   **`SwingChatbot`:** A high-level, Java Swing-based graphical user interface demonstrating the framework's capabilities.
     *   **Enhanced UI/UX:** Features streamlined user message display, efficient input field clearing, and improved focus handling.
     *   **Dynamic UI Elements:** UI elements like the "Attach Image" button and "Think" checkbox are dynamically enabled/disabled based on the capabilities of the currently selected LLM model, as defined in the `ModelRegistry`.
-*   **`SettingsDialog`:** A dynamic settings dialog integrated with `SwingChatbot` for on-the-fly adjustment of LLM parameters (temperature, max tokens, top-p) and model selection.
+*   **`SettingsDialog`:** A dynamic settings dialog integrated with `SwingChatbot` for on-the-fly adjustment of LLM parameters (temperature, max tokens, top-p, frequency penalty, presence penalty) and model selection.
     *   **Visual Consistency:** Achieves a cohesive look and feel with the main chatbot UI.
     *   **Improved Validation:** Robust input validation for parameters like 'Max Tokens'.
     *   **Intuitive Sliders:** Provides clear, decimal labels for Temperature and Top P sliders.
     *   **Accurate Feedback:** Ensures "LLM settings updated!" message only appears when settings are genuinely applied.
 *   **`Welcome`:** Utility for generating welcome messages.
+*   **`LoginDialog`:** A pre-launch dialog for user authentication.
+    *   **Flexible Authentication:** Supports both a simple hardcoded API key mode (for development/testing) and a more robust database-backed mode.
+    *   **User Profile Management:** In database mode, allows users to create profiles (username + API key) stored in a local SQLite database.
+    *   **Master Key Validation:** In database mode, new profile creation requires a valid master key from `master_keys.txt`, ensuring controlled access. Each master key is consumed after a single successful registration.
+    *   **"Remember Username":** Remembers the last successfully logged-in username for convenience.
+*   **`ModelCheckDialog`:** A pre-launch dialog that verifies the availability of hardcoded models against the LM Studio server.
+    *   **Custom Loading Animation:** Provides visual feedback during the check.
+    *   **Retry Mechanism:** Allows users to re-attempt connection if it fails.
 
 ### Code Quality
 
@@ -103,6 +111,7 @@ These instructions will get you a copy of the project up and running on your loc
 *   **Java Development Kit (JDK) 24 or higher:** Ensure you have JDK 24 installed and configured.
 *   **Maven:** This project uses Maven for dependency management and building.
 *   **Local LLM Server (Optional but Recommended):** To run the examples, you'll need a local LLM server like [LM Studio](https://lmstudio.ai/) or [Ollama](https://ollama.ai/) running and serving a compatible model (e.g., `gemma-3-4b-it`) on `http://localhost:1234`. The `testEndpoints.java` file can be used to verify connectivity to `http://127.0.0.1:1234/v1/models`.
+*   **WiX Toolset (for Windows packaging):** If you plan to create `.msi` installers on Windows, you'll need to install WiX Toolset from [wix.sourceforge.io](https://wix.sourceforge.io/).
 
 ### Installation
 
@@ -115,6 +124,102 @@ These instructions will get you a copy of the project up and running on your loc
     ```bash
     mvn clean install
     ```
+    This command compiles the code, runs tests, and packages the application into a `jar-with-dependencies` in the `target/` directory.
+
+## Usage
+
+### 1. As a Client
+
+As a client, you'll interact with the compiled application.
+
+1.  **Ensure LM Studio is Running:**
+    *   Make sure your LM Studio application is running and has the necessary models loaded. The chatbot will attempt to connect to it.
+    *   The default LLM Base URL is `http://localhost:1234/v1`. If your LM Studio is configured differently, you'll need to adjust the `LLM_BASE_URL` constant in `SwingChatbot.java` (as a developer) and recompile.
+
+2.  **Run the Application:**
+    *   Navigate to the `ChatbotApp` directory (or wherever you packaged your application).
+    *   Run the executable (e.g., `ChatbotApp.exe` on Windows).
+
+3.  **Login / Create Profile:**
+    *   A "User Login / Create Profile" (or "API Key Login" in hardcoded mode) dialog will appear.
+    *   **If in Database Mode (`AppConfig.USE_DATABASE_AUTH = true`):**
+        *   **To Create a New Profile:** Enter a desired `Username` and an `API Key` (this key must be one provided by the developer, e.g., "deploytest" from `master_keys.txt`). Click "Create Profile". This stores your username and a *hashed* version of your API key in a local `app_data.db` file. The master key used will be consumed.
+        *   **To Login:** Enter your registered `Username` and `API Key`. Click "Login". The last successfully logged-in username will be remembered for future sessions.
+    *   **If in Hardcoded API Key Mode (`AppConfig.USE_DATABASE_AUTH = false`):**
+        *   Enter the hardcoded `API Key` (default: "deploytest"). Click "Login". Profile creation is not available in this mode.
+
+4.  **Model Availability Check:**
+    *   After successful login, a "Model Availability Check" dialog will appear. This connects to your running LM Studio instance to verify that the hardcoded models in the application are available.
+    *   Wait for the check to complete. If there are warnings about missing models, you might still be able to proceed, but some features might not work.
+    *   Click "Proceed to Chat" once enabled.
+
+5.  **Interact with the Chatbot:**
+    *   The main chatbot window will appear.
+    *   Type your messages in the input field and press Enter or click "Send".
+    *   Use the "Settings" button to adjust model parameters (temperature, top P, max tokens, frequency penalty, presence penalty).
+    *   Use the "Attach Image" button if the selected model supports vision.
+    *   Use the "Think" checkbox if the selected model supports thinking.
+
+### 2. As a Server (LM Studio)
+
+The "server" in this context refers to the LM Studio application, which hosts the Large Language Models.
+
+1.  **Download and Install LM Studio:** If you haven't already, download and install LM Studio from their official website.
+2.  **Download Models:** Within LM Studio, download the models that your `AI4J` application expects (e.g., `google/gemma-3-1b`, `qwen/qwen3-4b`). These are defined in `src/main/java/com/aiforjava/llm/models/ModelRegistry.java`.
+3.  **Load Models:** Load the desired models into LM Studio's server.
+4.  **Start Server:** Ensure the LM Studio local server is running. By default, it usually runs on `http://localhost:1234`.
+5.  **Verify Endpoint:** The `AI4J` application expects the `/v1/models` endpoint. LM Studio typically exposes this automatically.
+
+### 3. As a Developer
+
+As a developer, you'll work with the source code and build the application.
+
+1.  **Prerequisites:**
+    *   Java Development Kit (JDK) 24 or higher.
+    *   Maven.
+    *   An IDE like IntelliJ IDEA or Eclipse (recommended).
+    *   WiX Toolset (for Windows `.msi` packaging).
+
+2.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-username/AI4J.git # Replace with your actual repository URL
+    cd AI4J
+    ```
+
+3.  **Build the Project (Maven):**
+    ```bash
+    mvn clean install
+    ```
+    This command compiles your code, runs tests, and creates the `jar-with-dependencies` in the `target/` directory.
+
+4.  **Switching Authentication Modes:**
+    *   Open `src/main/java/com/aiforjava/demo/AppConfig.java`.
+    *   Change the `USE_DATABASE_AUTH` boolean flag:
+        *   `public static final boolean USE_DATABASE_AUTH = true;` (for database authentication)
+        *   `public static final boolean USE_DATABASE_AUTH = false;` (for hardcoded API key authentication)
+    *   Remember to `mvn clean install` after changing this flag for the changes to take effect.
+
+5.  **Managing Master Keys (`master_keys.txt` - Database Mode Only):**
+    *   When `USE_DATABASE_AUTH` is `true`, the application uses `master_keys.txt` to validate new registrations.
+    *   This file is located in the application's root directory (where the JAR/executable runs).
+    *   If it doesn't exist, it's created with "deploytest" as the default key.
+    *   **To add new master keys:** Manually open `master_keys.txt` and add each new key on a separate line.
+    *   **To distribute:** Provide this `master_keys.txt` file along with your packaged application to clients.
+    *   **Important:** Once a master key is used for registration, it is automatically removed from `master_keys.txt` on that client's machine.
+
+6.  **Managing the Local Database (`app_data.db` - Database Mode Only):**
+    *   When `USE_DATABASE_AUTH` is `true`, user profiles are stored in `app_data.db`.
+    *   This file is located in the application's root directory.
+    *   **To reset the database:** Close the application and simply delete the `app_data.db` file. A new, empty one will be created on the next run.
+
+7.  **Run from IDE:**
+    *   Open the project in your IDE.
+    *   Locate `src/main/java/com/aiforjava/demo/SwingChatbot.java`.
+    *   Run the `main` method within `SwingChatbot.java`.
+
+8.  **Debugging:**
+    *   Set breakpoints in your IDE.
+    *   Check the console output for any `System.out.println` messages, especially those related to model checking.
 
 ## Usage Examples
 
@@ -195,9 +300,13 @@ The project uses the following key dependencies, managed by Maven:
 *   **Jackson (`jackson-databind`, `jackson-datatype-jsr310`):** For efficient JSON processing (serialization and deserialization).
 *   **Apache HttpComponents Client 5 (`httpclient5`):** For making robust HTTP requests to LLM endpoints.
 *   **SLF4J (`slf4j-api`):** Simple Logging Facade for Java, providing flexible and configurable logging.
+*   **SQLite JDBC (`sqlite-jdbc`):** For embedded database functionality.
 
 ## Recent Changes
 
+*   **User Authentication & Profile Management:** Implemented a flexible login system with optional database-backed user profiles (username + hashed API key) and master key validation for new registrations.
+*   **Model Availability Check:** Added a pre-launch check to verify LM Studio model availability with a custom loading animation.
+*   **Settings Dialog Enhancements:** Integrated `setfreq` and `setpresencefreq` sliders into the settings dialog for finer control over LLM parameters.
 *   **Caching:** Integrated Caffeine to provide caching for LLM responses, reducing latency and API costs. Introduced `LLMCacheManager` and `generateWithCache` method in `ChatServices_LowLevel`.
 *   **Resource Management:** `DefaultHttpClient` now implements `AutoCloseable` to ensure proper shutdown of internal resources.
 *   **Enhanced Memory Management:** `CachedFileMemory` now provides `addMessage` (non-saving), `addMessageAndSave` (immediate saving), and `flush()` methods for flexible persistence control. Clarified recommendation for `OptimizedSlidingWindowMemory` over `SlidingWindowMemory`.

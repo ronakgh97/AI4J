@@ -23,7 +23,7 @@ public class LoginDialog extends JDialog {
     private static final java.io.File LAST_USERNAME_FILE = new java.io.File("last_username.txt");
 
     // Hardcoded API key for non-database mode
-    private static final String HARDCODED_API_KEY = "deploy";
+    private static final String HARDCODED_API_KEY = "demo";
 
     // UI Constants (matching SwingChatbot for consistency)
     private static final Color BACKGROUND_COLOR = new Color(48, 48, 48);
