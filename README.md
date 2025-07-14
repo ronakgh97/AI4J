@@ -266,7 +266,7 @@ Another demonstration of a high-level chatbot using `ChatServices` with `Sliding
 A comprehensive example showcasing a Java Swing-based graphical user interface for interacting with the LLM, including dynamic settings.
 
 ```bash
-mvn exec:java -Dexec.mainClass="com.aiforjava.demo.SwingChatbot"
+mvn exec:java -Dexec.mainClass="com.aiforjava.demo.ChatBotApp.SwingChatbot"
 ```
 
 ### 5. File-Based Memory Chatbot (`ChatBot.java`)
@@ -310,6 +310,7 @@ The project uses the following key dependencies, managed by Maven:
 *   **Caching:** Integrated Caffeine to provide caching for LLM responses, reducing latency and API costs. Introduced `LLMCacheManager` and `generateWithCache` method in `ChatServices_LowLevel`.
 *   **Resource Management:** `DefaultHttpClient` now implements `AutoCloseable` to ensure proper shutdown of internal resources.
 *   **Enhanced Memory Management:** `CachedFileMemory` now provides `addMessage` (non-saving), `addMessageAndSave` (immediate saving), and `flush()` methods for flexible persistence control. Clarified recommendation for `OptimizedSlidingWindowMemory` over `SlidingWindowMemory`.
+*   **Improved Streaming Display in SwingChatbot:** Fixed spacing issues and ensured the "AI 🤖: " prefix is displayed correctly with the first visible content chunk from streamed LLM responses, enhancing user experience.
 
 ## Contributing
 

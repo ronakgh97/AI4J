@@ -1,5 +1,6 @@
-package com.aiforjava.demo;
+package com.aiforjava.demo.ChatBotApp;
 
+import com.aiforjava.demo.Welcome;
 import com.aiforjava.exception.ExceptionHandler;
 import com.aiforjava.exception.LLMServiceException;
 import com.aiforjava.exception.LLMParseException;
@@ -15,11 +16,13 @@ import com.aiforjava.memory.memory_algorithm.OptimizedSlidingWindowMemory;
 import java.io.File;
 import com.aiforjava.llm.models.ModelFeature;
 import com.aiforjava.llm.models.ModelRegistry;
+import com.formdev.flatlaf.FlatDarculaLaf;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.time.Duration;
+import java.util.Objects;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
@@ -40,6 +43,7 @@ public class SwingChatbot extends JFrame {
     private long startTime; // To store the start time of AI thinking
 
     private static final String LLM_BASE_URL = "https://modest-literally-fish.ngrok-free.app";
+    //private static final String LLM_BASE_URL = "http://127.0.0.1:1234";
     private static String MODEL_NAME = "google/gemma-3-1b"; // Or your preferred model
     private static final int MAX_MEMORY = 1000; // Max messages for memory (adjust as needed for your LLM's context window)
 
@@ -50,10 +54,10 @@ public class SwingChatbot extends JFrame {
     private Timer generatingAnimationTimer;
     private int thinkingAnimationState = 0;
 
-    private static final Color BACKGROUND_COLOR = new Color(48, 48, 48);
-    private static final Color FOREGROUND_COLOR = new Color(172, 172, 172);
-    private static final Color ACCENT_COLOR = new Color(9, 29, 76); // Cornflower Blue
-    private static final Color BUTTON_COLOR = new Color(70, 70, 70);
+    private static final Color BACKGROUND_COLOR = new Color(36, 36, 36);
+    private static final Color FOREGROUND_COLOR = new Color(220, 220, 220);
+    private static final Color ACCENT_COLOR = new Color(66, 135, 245); // Vibrant Blue
+    private static final Color BUTTON_COLOR = new Color(55, 55, 55);
     private static final Font CHAT_FONT = new Font("Consolas", Font.BOLD, 16);
     private static final Font INPUT_FONT = new Font("Consolas", Font.BOLD, 14);
     private static final Font BUTTON_FONT = new Font("Consolas", Font.BOLD, 12);
@@ -73,10 +77,19 @@ public class SwingChatbot extends JFrame {
     }
 
     public SwingChatbot() {
-        setTitle("AI4J Chatbot 😊");
-        setSize(1024, 1024);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Center the window
+        this.setTitle("AI4J Chatbot");
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setSize(1024, 728);
+        this.setLocationRelativeTo(null); // Center the window
+
+        // Set the application icon
+        try {
+            //Image icon = Toolkit.getDefaultToolkit().getImage(SwingChatbot.class.getResource("/_icon.jpg"));
+            ImageIcon icon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/_icon.jpg")));
+            this.setIconImage(icon.getImage());
+        } catch (Exception e) {
+            System.err.println("Error loading icon: " + e.getMessage());
+        }
         setResizable(false);
         getContentPane().setBackground(BACKGROUND_COLOR);
 
@@ -159,6 +172,16 @@ public class SwingChatbot extends JFrame {
         sendButton.setFocusPainted(true); // Remove focus border
         sendButton.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
 
+        sendButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                sendButton.setBackground(ACCENT_COLOR.brighter());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                sendButton.setBackground(ACCENT_COLOR);
+            }
+        });
+
+
         JButton clearButton = new JButton("Clear");
         clearButton.setBackground(BUTTON_COLOR);
         clearButton.setForeground(FOREGROUND_COLOR);
@@ -190,6 +213,15 @@ public class SwingChatbot extends JFrame {
         settingsButton.setFocusPainted(false);
         settingsButton.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
         buttonPanel.add(settingsButton);
+
+        settingsButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                settingsButton.setBackground(BUTTON_COLOR.brighter());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                settingsButton.setBackground(BUTTON_COLOR);
+            }
+        });
 
         inputPanel.add(buttonPanel, BorderLayout.EAST);
 
@@ -249,6 +281,9 @@ public class SwingChatbot extends JFrame {
                 sendMessage();
             }
         };
+
+
+
         sendButton.addActionListener(sendActionListener);
         inputField.addActionListener(sendActionListener); // Allow sending with Enter key
 
@@ -295,6 +330,17 @@ public class SwingChatbot extends JFrame {
             }
         });
 
+        // Add keyboard shortcut for Clear (Ctrl + L)
+        InputMap inputMap = clearButton.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap actionMap = clearButton.getActionMap();
+        inputMap.put(KeyStroke.getKeyStroke("control L"), "clearChat");
+        actionMap.put("clearChat", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                clearButton.doClick(); // Simulate a button click
+            }
+        });
+
         settingsButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -312,7 +358,7 @@ public class SwingChatbot extends JFrame {
         // Display initial message
         String welcomeMessage = "Welcome to AI4J Swing Chatbot!\n"; //Fallback message
         try{
-            welcomeMessage=Welcome.generateWelcomeMessage();
+            welcomeMessage= Welcome.generateWelcomeMessage();
         } catch (LLMServiceException e){
             // Log the exception, but use a fallback message for the UI
             ExceptionHandler.handle(e);
@@ -320,7 +366,7 @@ public class SwingChatbot extends JFrame {
         }
 
         appendStyledText(welcomeMessage, FOREGROUND_COLOR, true, StyleConstants.ALIGN_CENTER);
-        appendStyledText("\n" + "─".repeat(60) + "\n\n", FOREGROUND_COLOR, false, StyleConstants.ALIGN_CENTER);
+        appendStyledText("\n" + "─".repeat(70) + "\n\n", FOREGROUND_COLOR.brighter(), false, StyleConstants.ALIGN_CENTER);
 
     }
 
@@ -372,94 +418,91 @@ public class SwingChatbot extends JFrame {
         sendButton.setEnabled(false);
         generatingLabel.setVisible(true); // Show thinking indicator
         generatingAnimationTimer.start(); // Start animation
-        appendStyledText("AI 🤖: ", FOREGROUND_COLOR, true, StyleConstants.ALIGN_LEFT); // Prepare for AI response
+
 
         startTime = System.currentTimeMillis(); // Record start time
 
         // Use SwingWorker for background LLM call
-        new SwingWorker<Void, String>() {
+        new SwingWorker<Void, com.aiforjava.llm.streams.StreamResponse>() {
             boolean doneThinking = false; //helper var
             boolean inThinkBlock = false; // New flag to track if we are inside a <think> block
+            boolean aiResponseStarted = false;
 
             @Override
             protected Void doInBackground() throws Exception, LLMParseException {
+                // Create an anonymous StreamHandler to process the stream responses
+                com.aiforjava.llm.streams.StreamHandler streamHandler = streamResponse -> publish(streamResponse);
+
                 if (selectedImageFile != null) {
-                    chatService.chatStream(finalUserMessage, selectedImageFile, finalRequestParams, this::publish);
+                    chatService.chatStream(finalUserMessage, selectedImageFile, finalRequestParams, streamHandler);
                 } else {
-                    chatService.chatStream(finalUserMessage, finalRequestParams, this::publish);
+                    chatService.chatStream(finalUserMessage, finalRequestParams, streamHandler);
                 }
                 return null;
             }
 
             @Override
-            protected void process(java.util.List<String> chunks) {
-                for (String chunk : chunks) {
-                    String currentChunkContent = chunk; // The original chunk content
+            protected void process(java.util.List<com.aiforjava.llm.streams.StreamResponse> streamResponses) {
+                for (com.aiforjava.llm.streams.StreamResponse streamResponse : streamResponses) {
+                    String contentChunk = streamResponse.getContent();
+                    String reasoningChunk = streamResponse.getReasoningContent();
+                    System.out.println("DEBUG: Processing chunk - reasoningChunk: '" + reasoningChunk + "', contentChunk: '" + contentChunk + "', thinkCheckbox.isSelected(): " + thinkCheckbox.isSelected() + ", aiResponseStarted: " + aiResponseStarted);
 
-                    // Handle <think> tag: set inThinkBlock and append start marker if enabled
-                    if (currentChunkContent.contains("<think>")) {
-                        inThinkBlock = true;
-                        if (thinkCheckbox.isSelected()) {
+                    // Append "AI 🤖: " only once, when the first visible content arrives
+                    if (!aiResponseStarted) {
+                        boolean shouldAppendPrefix = false;
+                        // Check if reasoning content exists and is not just whitespace, and thinking is enabled
+                        if (reasoningChunk != null && !reasoningChunk.trim().isEmpty() && thinkCheckbox.isSelected()) {
+                            shouldAppendPrefix = true;
+                        } 
+                        // Check if regular content exists and is not just whitespace
+                        else if (contentChunk != null && !contentChunk.trim().isEmpty()) {
+                            shouldAppendPrefix = true;
+                        }
+
+                        if (shouldAppendPrefix) {
+                            appendStyledText("AI 🤖: ", FOREGROUND_COLOR, true, StyleConstants.ALIGN_LEFT);
+                            aiResponseStarted = true;
+                        }
+                    }
+
+                    // Process reasoning content first if available and thinking is enabled
+                    if (reasoningChunk != null && !reasoningChunk.isEmpty() && thinkCheckbox.isSelected()) {
+                        if (!inThinkBlock) { // Only append "[Thinking..." once
                             appendStyledText("[Thinking...\n", new Color(61, 103, 255, 171), false, StyleConstants.ALIGN_LEFT);
+                            inThinkBlock = true;
                         }
-                        currentChunkContent = currentChunkContent.replace("<think>", "");
-                    }
-
-                    // Determine if content should be appended based on current inThinkBlock state
-                    boolean shouldAppendContent = thinkCheckbox.isSelected() || !inThinkBlock;
-
-                    // Handle </think> tag: set inThinkBlock to false and append end marker if enabled
-                    int endIndex = currentChunkContent.indexOf("</think>");
-                    String contentBeforeEndTag = currentChunkContent;
-                    String contentAfterEndTag = "";
-
-                    if (endIndex != -1) {
-                        contentBeforeEndTag = currentChunkContent.substring(0, endIndex);
-                        if (endIndex + "</think>".length() < currentChunkContent.length()) {
-                            contentAfterEndTag = currentChunkContent.substring(endIndex + "</think>".length());
-                        }
-                        // Update inThinkBlock state for the content *after* the end tag
-                        inThinkBlock = false;
-                    }
-
-                    // Process content before the end tag (if any)
-                    if (shouldAppendContent) { // This should be based on inThinkBlock *before* this chunk's end tag
-                        for (char c : contentBeforeEndTag.toCharArray()) {
-                            if (thinkCheckbox.isSelected() && ModelRegistry.supportsFeature(currentModelName, ModelFeature.THINK) && inThinkBlock) {
-                                appendStyledText(String.valueOf(c), new Color(0, 207, 255, 171), false, StyleConstants.ALIGN_LEFT);
-                            } else {
-                                appendStyledText(String.valueOf(c), FOREGROUND_COLOR, false, StyleConstants.ALIGN_LEFT);
-                            }
+                        for (char c : reasoningChunk.toCharArray()) {
+                            appendStyledText(String.valueOf(c), new Color(0, 207, 255, 171), false, StyleConstants.ALIGN_LEFT);
                             try {
-                                Thread.sleep(10);
+                                Thread.sleep(12);
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
                                 return;
-                            } catch (NullPointerException e){
-                                System.err.println("Stand by");
                             }
                         }
                     }
 
-                    // If the chunk contained </think>, append the end marker and process content after it
-                    if (endIndex != -1) {
-                        doneThinking = true;
-                        long endTime = System.currentTimeMillis();
-                        long duration = (endTime - startTime) / 1000;
-                        if (thinkCheckbox.isSelected()) {
-                            appendStyledText("\n[End Thinking. (Thought for: " + duration + " seconds)]\n", new Color(40, 73, 201), false, StyleConstants.ALIGN_LEFT);
-                        }
+                    
 
-                        // Now process content after the end tag. This content is definitely not in a think block.
-                        for (char c : contentAfterEndTag.toCharArray()) {
+                    // Process regular content
+                    if (contentChunk != null && !contentChunk.isEmpty()) {
+                        if (inThinkBlock && !doneThinking) { // If we were thinking, and now content is coming, end thinking
+                            doneThinking = true;
+                            long endTime = System.currentTimeMillis();
+                            long duration = (endTime - startTime) / 1000;
+                            if (thinkCheckbox.isSelected()) {
+                                appendStyledText("\n[End Thinking. (Thought for: " + duration + " seconds)]\n\n", new Color(40, 73, 201), false, StyleConstants.ALIGN_LEFT);
+                            }
+                            inThinkBlock = false; // Reset think block flag
+                        }
+                        for (char c : contentChunk.toCharArray()) {
                             appendStyledText(String.valueOf(c), FOREGROUND_COLOR, false, StyleConstants.ALIGN_LEFT);
                             try {
                                 Thread.sleep(10);
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
                                 return;
-                            } catch (NullPointerException e){
-                                System.err.println("Stand by");
                             }
                         }
                     }
@@ -491,22 +534,38 @@ public class SwingChatbot extends JFrame {
         }.execute();
     }
 
+
     public static void main(String[] args) {
+        UIManager.put("Button.arc", 15);
+        UIManager.put("Component.arc", 15);
+        UIManager.put("TextComponent.arc", 10);
+        UIManager.put("TextComponent.background", BUTTON_COLOR); // Updated line
+        UIManager.put("ScrollBar.thumbArc", 10);
+        UIManager.put("Component.innerFocusWidth", 2);
+
         try {
-            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    UIManager.setLookAndFeel(info.getClassName());
-                    break;
+            //UIManager.setLookAndFeel(new FlatLightLaf());
+            UIManager.setLookAndFeel(new FlatDarculaLaf());
+        } catch (Exception e){
+            System.err.println("FlatDarkLaf failed, falling back to Metal...");
+            try {
+                for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                    if ("Metal".equals(info.getName())) {
+                        UIManager.setLookAndFeel(info.getClassName());
+                        break;
+                    }
+                    //UIManager.setLookAndFeel(new FlatDarkLaf()); //Overwriting for test
+                }
+            } catch (Exception ex) {
+                // If Nimbus is not available, fall back to original look and feel
+                try {
+                    UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+                } catch (Exception exp) {
+                    exp.printStackTrace();
                 }
             }
-        } catch (Exception e) {
-            // If Nimbus is not available, fall back to original look and feel
-            try {
-                UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
         }
+
         SwingUtilities.invokeLater(() -> {
             // Create a dummy JFrame to act as parent for the dialog
             JFrame dummyFrame = new JFrame();

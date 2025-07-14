@@ -9,6 +9,7 @@ import com.aiforjava.exception.LLMStreamProcessingException;
 import com.aiforjava.llm.streams.DefaultStreamResponseParser;
 import com.aiforjava.llm.streams.StreamHandler;
 import com.aiforjava.llm.streams.StreamResponseParser;
+import com.aiforjava.llm.streams.StreamResponse;
 
 import java.io.IOException;
 import java.net.URI;
@@ -187,7 +188,7 @@ public class DefaultHttpClient implements LLM_Client, AutoCloseable {
             try (Stream<String> stream = response.body()) {
                 stream.forEach(line -> {
                     try {
-                        String content = streamResponseParser.parse(line);
+                        StreamResponse content = streamResponseParser.parse(line);
                         if (content != null) {
                             handler.onStream(content);
                         }
@@ -294,7 +295,7 @@ public class DefaultHttpClient implements LLM_Client, AutoCloseable {
 
         CompletableFuture.runAsync(() -> {
             try {
-                String content = streamResponseParser.parse(line);
+                StreamResponse content = streamResponseParser.parse(line);
                 if (content != null) {
                     handler.onStream(content);
                 }
