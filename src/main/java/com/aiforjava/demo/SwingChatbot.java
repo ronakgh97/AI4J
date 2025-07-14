@@ -30,12 +30,16 @@ import javax.swing.text.StyledDocument;
 public class SwingChatbot extends JFrame {
 
     private final JTextPane chatArea;
+    private final JTextPane reasoningArea;
     private final JTextField inputField;
     private final JButton sendButton;
     private ChatServices chatService;
     private File selectedImageFile; // To store the selected image file
     private JLabel selectedImageLabel; // To display the selected image filename
     private JCheckBox thinkCheckbox; // Checkbox for 'think' capability
+    
+    private JSplitPane splitPane; // Reference to the JSplitPane
+    
     private JButton attachImageButton; // Button to attach image
     private long startTime; // To store the start time of AI thinking
 
@@ -50,16 +54,16 @@ public class SwingChatbot extends JFrame {
     private Timer generatingAnimationTimer;
     private int thinkingAnimationState = 0;
 
-    private static final Color BACKGROUND_COLOR = new Color(48, 48, 48);
-    private static final Color FOREGROUND_COLOR = new Color(172, 172, 172);
-    private static final Color ACCENT_COLOR = new Color(9, 29, 76); // Cornflower Blue
-    private static final Color BUTTON_COLOR = new Color(70, 70, 70);
+    private static final Color BACKGROUND_COLOR = new Color(55, 55, 55);
+    private static final Color FOREGROUND_COLOR = new Color(155, 155, 155);
+    private static final Color ACCENT_COLOR = new Color(72, 129, 255); // Cornflower Blue
+    private static final Color BUTTON_COLOR = new Color(169, 169, 169);
     private static final Font CHAT_FONT = new Font("Consolas", Font.BOLD, 16);
     private static final Font INPUT_FONT = new Font("Consolas", Font.BOLD, 14);
     private static final Font BUTTON_FONT = new Font("Consolas", Font.BOLD, 12);
 
-    private void appendStyledText(String text, Color color, boolean bold, int alignment) {
-        StyledDocument doc = chatArea.getStyledDocument();
+    private void appendStyledText(JTextPane textPane, String text, Color color, boolean bold, int alignment) {
+        StyledDocument doc = textPane.getStyledDocument();
         SimpleAttributeSet attributes = new SimpleAttributeSet();
         StyleConstants.setForeground(attributes, color);
         StyleConstants.setBold(attributes, bold);
@@ -70,6 +74,10 @@ public class SwingChatbot extends JFrame {
         } catch (BadLocationException e) {
             e.printStackTrace();
         }
+    }
+
+    private void appendStyledText(String text, Color color, boolean bold, int alignment) {
+        appendStyledText(chatArea, text, color, bold, alignment);
     }
 
     public SwingChatbot() {
@@ -87,37 +95,49 @@ public class SwingChatbot extends JFrame {
         chatArea.setFont(CHAT_FONT);
         chatArea.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        // Set up styled document for JTextPane
-        StyledDocument doc = chatArea.getStyledDocument();
-        SimpleAttributeSet defaultAttributes = new SimpleAttributeSet();
-        StyleConstants.setForeground(defaultAttributes, FOREGROUND_COLOR);
-        StyleConstants.setFontFamily(defaultAttributes, CHAT_FONT.getFamily());
-        StyleConstants.setFontSize(defaultAttributes, CHAT_FONT.getSize());
-        doc.setParagraphAttributes(0, doc.getLength(), defaultAttributes, false);
-        JScrollPane scrollPane = new JScrollPane(chatArea);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder()); // Remove default scroll pane border
-        add(scrollPane, BorderLayout.CENTER);
+        reasoningArea = new JTextPane();
+        reasoningArea.setEditable(false);
+        reasoningArea.setBackground(BACKGROUND_COLOR.darker());
+        reasoningArea.setForeground(FOREGROUND_COLOR);
+        reasoningArea.setFont(CHAT_FONT.deriveFont(Font.ITALIC));
+        reasoningArea.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JScrollPane reasoningScrollPane = new JScrollPane(reasoningArea);
+        reasoningScrollPane.setBorder(BorderFactory.createTitledBorder("-REASONING-"));
 
-        // Automatic scrolling
+        final JScrollPane chatScrollPane = new JScrollPane(chatArea);
+        chatScrollPane.setBorder(BorderFactory.createEmptyBorder());
+
+        this.splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, chatScrollPane, reasoningScrollPane);
+        this.splitPane.setResizeWeight(0.7);
+        add(this.splitPane, BorderLayout.CENTER);
+
+        // Automatic scrolling for chatArea
         chatArea.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
                 SwingUtilities.invokeLater(() -> {
-                    JScrollBar vertical = scrollPane.getVerticalScrollBar();
+                    JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
                     vertical.setValue(vertical.getMaximum());
                 });
             }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                // Not needed for this use case
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                // Not needed for this use case
-            }
+            @Override public void removeUpdate(DocumentEvent e) {}
+            @Override public void changedUpdate(DocumentEvent e) {}
         });
+
+        // Automatic scrolling for reasoningArea
+        reasoningArea.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                SwingUtilities.invokeLater(() -> {
+                    JScrollBar vertical = reasoningScrollPane.getVerticalScrollBar();
+                    vertical.setValue(vertical.getMaximum());
+                });
+            }
+            @Override public void removeUpdate(DocumentEvent e) {}
+            @Override public void changedUpdate(DocumentEvent e) {}
+        });
+
+        
 
         JPanel inputPanel = new JPanel(new BorderLayout(5, 5)); // Add gap between components
         inputPanel.setBackground(BACKGROUND_COLOR);
@@ -316,7 +336,7 @@ public class SwingChatbot extends JFrame {
         }
 
         appendStyledText(welcomeMessage, FOREGROUND_COLOR, true, StyleConstants.ALIGN_CENTER);
-        appendStyledText("\n" + "─".repeat(60) + "\n\n", FOREGROUND_COLOR, false, StyleConstants.ALIGN_CENTER);
+        appendStyledText("\n" + "─".repeat(50) + "\n\n", FOREGROUND_COLOR, false, StyleConstants.ALIGN_CENTER);
 
     }
 
@@ -369,16 +389,14 @@ public class SwingChatbot extends JFrame {
         generatingLabel.setVisible(true); // Show thinking indicator
         generatingAnimationTimer.start(); // Start animation
         appendStyledText("AI 🤖: ", FOREGROUND_COLOR, true, StyleConstants.ALIGN_LEFT); // Prepare for AI response
+        reasoningArea.setText("");
 
         startTime = System.currentTimeMillis(); // Record start time
 
         // Use SwingWorker for background LLM call
-        new SwingWorker<Void, String>() {
-            boolean doneThinking = false; //helper var
-            boolean inThinkBlock = false; // New flag to track if we are inside a <think> block
-
+        new SwingWorker<Void, com.aiforjava.llm.streams.StreamResponse>() {
             @Override
-            protected Void doInBackground() throws Exception, LLMParseException {
+            protected Void doInBackground() throws Exception {
                 if (selectedImageFile != null) {
                     chatService.chatStream(finalUserMessage, selectedImageFile, finalRequestParams, this::publish);
                 } else {
@@ -388,76 +406,13 @@ public class SwingChatbot extends JFrame {
             }
 
             @Override
-            protected void process(java.util.List<String> chunks) {
-                for (String chunk : chunks) {
-                    String currentChunkContent = chunk; // The original chunk content
-
-                    // Handle <think> tag: set inThinkBlock and append start marker if enabled
-                    if (currentChunkContent.contains("<think>")) {
-                        inThinkBlock = true;
-                        if (thinkCheckbox.isSelected()) {
-                            appendStyledText("[Thinking...\n", new Color(61, 103, 255, 171), false, StyleConstants.ALIGN_LEFT);
-                        }
-                        currentChunkContent = currentChunkContent.replace("<think>", "");
+            protected void process(java.util.List<com.aiforjava.llm.streams.StreamResponse> chunks) {
+                for (com.aiforjava.llm.streams.StreamResponse response : chunks) {
+                    if (response.getReasoningContent() != null) {
+                        appendStyledText(reasoningArea, response.getReasoningContent(), FOREGROUND_COLOR, false, StyleConstants.ALIGN_LEFT);
                     }
-
-                    // Determine if content should be appended based on current inThinkBlock state
-                    boolean shouldAppendContent = thinkCheckbox.isSelected() || !inThinkBlock;
-
-                    // Handle </think> tag: set inThinkBlock to false and append end marker if enabled
-                    int endIndex = currentChunkContent.indexOf("</think>");
-                    String contentBeforeEndTag = currentChunkContent;
-                    String contentAfterEndTag = "";
-
-                    if (endIndex != -1) {
-                        contentBeforeEndTag = currentChunkContent.substring(0, endIndex);
-                        if (endIndex + "</think>".length() < currentChunkContent.length()) {
-                            contentAfterEndTag = currentChunkContent.substring(endIndex + "</think>".length());
-                        }
-                        // Update inThinkBlock state for the content *after* the end tag
-                        inThinkBlock = false;
-                    }
-
-                    // Process content before the end tag (if any)
-                    if (shouldAppendContent) { // This should be based on inThinkBlock *before* this chunk's end tag
-                        for (char c : contentBeforeEndTag.toCharArray()) {
-                            if (thinkCheckbox.isSelected() && ModelRegistry.supportsFeature(currentModelName, ModelFeature.THINK) && inThinkBlock) {
-                                appendStyledText(String.valueOf(c), new Color(0, 207, 255, 171), false, StyleConstants.ALIGN_LEFT);
-                            } else {
-                                appendStyledText(String.valueOf(c), FOREGROUND_COLOR, false, StyleConstants.ALIGN_LEFT);
-                            }
-                            try {
-                                Thread.sleep(10);
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                                return;
-                            } catch (NullPointerException e){
-                                System.err.println("Stand by");
-                            }
-                        }
-                    }
-
-                    // If the chunk contained </think>, append the end marker and process content after it
-                    if (endIndex != -1) {
-                        doneThinking = true;
-                        long endTime = System.currentTimeMillis();
-                        long duration = (endTime - startTime) / 1000;
-                        if (thinkCheckbox.isSelected()) {
-                            appendStyledText("\n[End Thinking. (Thought for: " + duration + " seconds)]\n", new Color(40, 73, 201), false, StyleConstants.ALIGN_LEFT);
-                        }
-
-                        // Now process content after the end tag. This content is definitely not in a think block.
-                        for (char c : contentAfterEndTag.toCharArray()) {
-                            appendStyledText(String.valueOf(c), FOREGROUND_COLOR, false, StyleConstants.ALIGN_LEFT);
-                            try {
-                                Thread.sleep(10);
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                                return;
-                            } catch (NullPointerException e){
-                                System.err.println("Stand by");
-                            }
-                        }
+                    if (response.getContent() != null) {
+                        appendStyledText(chatArea, response.getContent(), FOREGROUND_COLOR, false, StyleConstants.ALIGN_LEFT);
                     }
                 }
             }
@@ -466,9 +421,9 @@ public class SwingChatbot extends JFrame {
             protected void done() {
                 try {
                     get(); // Check for exceptions from doInBackground
-                    appendStyledText("\n\n", FOREGROUND_COLOR, false, StyleConstants.ALIGN_LEFT); // New line after AI's response
+                    appendStyledText(chatArea, "\n\n", FOREGROUND_COLOR, false, StyleConstants.ALIGN_LEFT); // New line after AI's response
                 } catch (Exception e) {
-                    appendStyledText("\nError: " + e.getMessage() + "\n\n", Color.RED, false, StyleConstants.ALIGN_LEFT);
+                    appendStyledText(chatArea, "\nError: " + e.getMessage() + "\n\n", Color.RED, false, StyleConstants.ALIGN_LEFT);
                     ExceptionHandler.handle(e);
                 } finally {
                     // Re-enable input and button

@@ -73,8 +73,14 @@ public class SimpleChatbot {
 
             try {
                 System.out.print("LLM: ");
-                chatService.chatStream(input, System.out::print);
-                System.out.println();
+                String content = chatService.chat(input);
+                String reasoning = chatService.getLastReasoningContent();
+
+                if (reasoning != null && !reasoning.trim().isEmpty()) {
+                    System.out.println("\n[Reasoning]:" + reasoning);
+                }
+                System.out.println("\n[Content]:" + content);
+
             } catch (Exception e) {
                 ExceptionHandler.handle(e);
             }
