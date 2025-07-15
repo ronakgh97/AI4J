@@ -1,4 +1,4 @@
-package com.aiforjava.demo;
+package com.aiforjava.demo.ChatBotApp;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Objects;
 
 public class LoginDialog extends JDialog {
 
@@ -30,18 +31,27 @@ public class LoginDialog extends JDialog {
     private static final Color FOREGROUND_COLOR = new Color(172, 172, 172);
     private static final Color ACCENT_COLOR = new Color(100, 149, 237); // Cornflower Blue
     private static final Color BUTTON_COLOR = new Color(70, 70, 70);
-    private static final Font LABEL_FONT = new Font("Consolas", Font.BOLD, 14);
-    private static final Font INPUT_FONT = new Font("Consolas", Font.PLAIN, 14);
-    private static final Font BUTTON_FONT = new Font("Consolas", Font.BOLD, 14);
+    private static final Font LABEL_FONT = new Font("Consolas", Font.PLAIN, 18);
+    private static final Font INPUT_FONT = new Font("Consolas", Font.BOLD, 18);
+    private static final Font BUTTON_FONT = new Font("Consolas", Font.BOLD, 16);
 
     public LoginDialog(JFrame parent, boolean useDatabaseAuth) {
         super(parent, useDatabaseAuth ? "User Login / Create Profile" : "API Key Login", true);
         this.useDatabaseAuth = useDatabaseAuth;
-        setSize(useDatabaseAuth ? 512 : 512, useDatabaseAuth ? 256 : 194); // Adjust size based on mode
+        setSize(useDatabaseAuth ? 528 : 512, useDatabaseAuth ? 256 : 156); // Adjust size based on mode
         setLocationRelativeTo(parent);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
+
+        // Set the application icon
+        try {
+            //Image icon = Toolkit.getDefaultToolkit().getImage(SwingChatbot.class.getResource("/_icon.jpg"));
+            ImageIcon icon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/_icon.jpg")));
+            this.setIconImage(icon.getImage());
+        } catch (Exception e) {
+            System.err.println("Error loading icon: " + e.getMessage());
+        }
 
         if (useDatabaseAuth) {
             databaseManager = new DatabaseManager();
@@ -84,7 +94,7 @@ public class LoginDialog extends JDialog {
             formPanel.add(usernameField);
         }
 
-        JLabel apiKeyLabel = new JLabel("API Key:");
+        JLabel apiKeyLabel = new JLabel("Enter Key:(Use demo)");
         apiKeyLabel.setForeground(FOREGROUND_COLOR);
         apiKeyLabel.setFont(LABEL_FONT);
         formPanel.add(apiKeyLabel);
@@ -134,7 +144,7 @@ public class LoginDialog extends JDialog {
 
             // Validate API Key against master keys
             if (!masterKeyManager.isValidMasterKey(apiKey)) {
-                JOptionPane.showMessageDialog(this, "Invalid API Key. Please use a valid key provided by the administrator.", "Creation Failed", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Invalid Key. Please use a valid key provided by the administrator.", "Creation Failed", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 

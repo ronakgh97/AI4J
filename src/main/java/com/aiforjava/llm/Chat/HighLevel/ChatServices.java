@@ -32,6 +32,7 @@ public class ChatServices {
     private final ModelParams defaultParams;
     private final PromptTemplate promptTemplate;
     private final PromptTemplate imageDescriptionPromptTemplate; // New prompt template for image descriptions
+    private String lastReasoningContent; // To store the reasoning part of the last response
 
     /**
      * Constructs a new ChatServices instance.
@@ -54,6 +55,15 @@ public class ChatServices {
         // Initialize the image description prompt template
         this.imageDescriptionPromptTemplate = new PromptTemplate("Describe the image concisely.", "{image_description_request}");
         initialize();
+    }
+
+    /**
+     * Returns the reasoning content from the last LLM response, if any was provided.
+     *
+     * @return The reasoning content, or null if none was available.
+     */
+    public String getLastReasoningContent() {
+        return lastReasoningContent;
     }
 
     /**
@@ -87,6 +97,7 @@ public class ChatServices {
     public String chat(String userMessage, ModelParams params) throws LLMServiceException {
         memory.addMessage(new Message(MessageRole.USER, promptTemplate.formatUserMessage(userMessage)));
         LLMResponse llmResponse = llm.generate(memory.getMessagesList(), params);
+        this.lastReasoningContent = llmResponse.getReasoningContent(); // Store reasoning
         Message assistantMessage = new Message(MessageRole.ASSISTANT, llmResponse.getContent());
         assistantMessage.setTokenCount(llmResponse.getTotalTokens());
         memory.addMessage(assistantMessage);
@@ -173,6 +184,7 @@ public class ChatServices {
     public LLMResponse chatAndGetTokens(String userMessage, ModelParams params) throws LLMServiceException {
         memory.addMessage(new Message(MessageRole.USER, promptTemplate.formatUserMessage(userMessage)));
         LLMResponse llmResponse = llm.generate(memory.getMessagesList(), params);
+        this.lastReasoningContent = llmResponse.getReasoningContent(); // Store reasoning
         Message assistantMessage = new Message(MessageRole.ASSISTANT, llmResponse.getContent());
         assistantMessage.setTokenCount(llmResponse.getTotalTokens());
         memory.addMessage(assistantMessage);
@@ -276,10 +288,17 @@ public class ChatServices {
         }
 
         StringBuilder response = new StringBuilder();
-        llm.generateStream(messagesToSend, params, content -> {
-            response.append(content);
-            handler.onStream(content);
+        StringBuilder reasoning = new StringBuilder();
+        llm.generateStream(messagesToSend, params, streamResponse -> {
+            if (streamResponse.getContent() != null) {
+                response.append(streamResponse.getContent());
+            }
+            if (streamResponse.getReasoningContent() != null) {
+                reasoning.append(streamResponse.getReasoningContent());
+            }
+            handler.onStream(streamResponse);
         });
+        this.lastReasoningContent = reasoning.length() > 0 ? reasoning.toString() : null;
         Message assistantMessage = new Message(MessageRole.ASSISTANT, response.toString());
         // For streaming, we estimate tokens as actual token count is not directly available from stream
         assistantMessage.setTokenCount(com.aiforjava.util.TokenCalculator.estimateTokens(assistantMessage));
@@ -355,10 +374,17 @@ public class ChatServices {
         }
 
         StringBuilder response = new StringBuilder();
-        llm.generateStream(messagesToSend, params, content -> {
-            response.append(content);
-            handler.onStream(content);
+        StringBuilder reasoning = new StringBuilder();
+        llm.generateStream(messagesToSend, params, streamResponse -> {
+            if (streamResponse.getContent() != null) {
+                response.append(streamResponse.getContent());
+            }
+            if (streamResponse.getReasoningContent() != null) {
+                reasoning.append(streamResponse.getReasoningContent());
+            }
+            handler.onStream(streamResponse);
         });
+        this.lastReasoningContent = reasoning.length() > 0 ? reasoning.toString() : null;
         Message assistantMessage = new Message(MessageRole.ASSISTANT, response.toString());
         // For streaming, we estimate tokens as actual token count is not directly available from stream
         assistantMessage.setTokenCount(com.aiforjava.util.TokenCalculator.estimateTokens(assistantMessage));

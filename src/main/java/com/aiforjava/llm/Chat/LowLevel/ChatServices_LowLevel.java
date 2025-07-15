@@ -229,6 +229,7 @@ public class ChatServices_LowLevel {
                 throw new LLMParseException("Invalid response: missing message content");
 
             String content = firstChoice.path("message").path("content").asText();
+            String reasoningContent = firstChoice.path("message").has("reasoning_content") ? firstChoice.path("message").path("reasoning_content").asText() : null;
 
             Integer totalTokens = null;
             if (root.has("usage")) {
@@ -238,7 +239,7 @@ public class ChatServices_LowLevel {
                 }
             }
 
-            return new LLMResponse(content, totalTokens);
+            return new LLMResponse(content, reasoningContent, totalTokens);
         } catch (JsonProcessingException e) {
             throw new LLMParseException("Failed to parse LLM response: " + e.getMessage(), e);
         }

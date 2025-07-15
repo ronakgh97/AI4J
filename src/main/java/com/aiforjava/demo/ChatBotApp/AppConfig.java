@@ -1,4 +1,4 @@
-package com.aiforjava.demo;
+package com.aiforjava.demo.ChatBotApp;
 
 public class AppConfig {
     // Set to true to enable database authentication (username + API Key, SQLite DB, MasterKeyManager)

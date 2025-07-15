@@ -1,4 +1,4 @@
-package com.aiforjava.demo;
+package com.aiforjava.demo.ChatBotApp;
 
 import com.aiforjava.llm.models.ModelParams;
 import com.aiforjava.llm.models.ModelRegistry;
@@ -8,6 +8,7 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Objects;
 
 public class SettingsDialog extends JDialog {
 
@@ -25,10 +26,10 @@ public class SettingsDialog extends JDialog {
     private boolean settingsApplied = false;
 
     // UI Constants (matching SwingChatbot for consistency)
-    private static final Color BACKGROUND_COLOR = new Color(48, 48, 48);
-    private static final Color FOREGROUND_COLOR = new Color(172, 172, 172);
-    private static final Color ACCENT_COLOR = new Color(100, 149, 237); // Cornflower Blue
-    private static final Color BUTTON_COLOR = new Color(70, 70, 70);
+    private static final Color BACKGROUND_COLOR = new Color(36, 36, 36);
+    private static final Color FOREGROUND_COLOR = new Color(220, 220, 220);
+    private static final Color ACCENT_COLOR = new Color(66, 135, 245); // Vibrant Blue
+    private static final Color BUTTON_COLOR = new Color(55, 55, 55);
     private static final Font INPUT_FONT = new Font("Consolas", Font.BOLD, 16);
     private static final Font BUTTON_FONT = new Font("Consolas", Font.BOLD, 14);
 
@@ -41,10 +42,19 @@ public class SettingsDialog extends JDialog {
 
     public SettingsDialog(JFrame parent, ModelParams initialParams, String initialModelName) {
         super(parent, "AI Settings", true); // Modal dialog
-        setSize(512, 512); // Increased height to accommodate new sliders
+        setSize(600, 500); // Increased height to accommodate new sliders
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
         getContentPane().setBackground(BACKGROUND_COLOR);
+
+        // Set the application icon
+        try {
+            //Image icon = Toolkit.getDefaultToolkit().getImage(SwingChatbot.class.getResource("/_icon.jpg"));
+            ImageIcon icon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/_icon.jpg")));
+            this.setIconImage(icon.getImage());
+        } catch (Exception e) {
+            System.err.println("Error loading icon: " + e.getMessage());
+        }
 
         this.currentModelParams = initialParams;
         this.currentModelName = initialModelName;
