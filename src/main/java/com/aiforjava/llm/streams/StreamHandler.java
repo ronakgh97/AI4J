@@ -12,8 +12,8 @@ public interface StreamHandler {
     /**
      * Called when a new chunk of content is received from the LLM stream.
      *
-     * @param content The string content received in the current chunk. This may not be a complete sentence.
+     * @param response The {@link StreamResponse} object containing the content and reasoning for the current chunk.
      */
-    void onStream(String content);
+    void onStream(StreamResponse response);
 }
 

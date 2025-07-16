@@ -1,9 +1,7 @@
 package com.aiforjava.llm.models;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A registry for managing LLM model capabilities. This class allows for centralizing
@@ -12,18 +10,19 @@ import java.util.Set;
  */
 public class ModelRegistry {
 
-    private static final HashMap<String, Set<ModelFeature>> modelCapabilities = new HashMap<>();
+    private static final ConcurrentHashMap<String, Set<ModelFeature>> modelCapabilities = new ConcurrentHashMap<>();
 
     // Static initializer to register default models and their capabilities
     static {
+
         // Example: Register a text-only model
-        registerModel("google/gemma-3-1b", Set.of(ModelFeature.TEXT));
+        registerModel("ibm/granite-3.2-8b", Set.of(ModelFeature.TEXT));
 
         // Example: Register a multimodal model with thinking capability
-        registerModel("qwen/qwen3-4b", Set.of(ModelFeature.TEXT, ModelFeature.THINK));
+        registerModel("qwen/qwen3-8b", Set.of(ModelFeature.TEXT, ModelFeature.THINK));
 
         // Example: Register a multimodal model with vision capability
-        //registerModel("google/gemma-3-4b", Set.of(ModelFeature.TEXT, ModelFeature.VISION));
+        registerModel("google/gemma-3-4b", Set.of(ModelFeature.TEXT, ModelFeature.VISION));
 
         // Add more models and their capabilities as needed
     }

@@ -17,7 +17,7 @@ public class DefaultStreamResponseParser implements StreamResponseParser {
     private final AtomicBoolean isFirstChunk = new AtomicBoolean(true);
 
     @Override
-    public String parse(String line) throws LLMParseException {
+    public StreamResponse parse(String line) throws LLMParseException {
         if (line.startsWith("data: ")) {
             String jsonData = line.substring(6).trim();
             if (jsonData.equals("[DONE]")) {
@@ -27,13 +27,22 @@ public class DefaultStreamResponseParser implements StreamResponseParser {
                 JsonNode rootNode = mapper.readTree(jsonData);
                 JsonNode choices = rootNode.path("choices");
                 if (choices.isArray() && !choices.isEmpty()) {
-                    JsonNode contentNode = choices.get(0).path("delta").path("content");
+                    JsonNode deltaNode = choices.get(0).path("delta");
+                    JsonNode contentNode = deltaNode.path("content");
+                    JsonNode reasoningNode = deltaNode.path("reasoning_content");
+
+                    String content = null;
                     if (!contentNode.isMissingNode()) {
-                        String content = contentNode.asText();
+                        content = contentNode.asText();
                         if (isFirstChunk.getAndSet(false) && content != null) {
                             content = content.stripLeading();
                         }
-                        return content;
+                    }
+
+                    String reasoningContent = reasoningNode.isMissingNode() ? null : reasoningNode.asText();
+
+                    if (content != null || reasoningContent != null) {
+                        return new StreamResponse(content, reasoningContent);
                     }
                 }
             } catch (IOException e) {

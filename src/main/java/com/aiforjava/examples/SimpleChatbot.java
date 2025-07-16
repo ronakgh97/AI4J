@@ -24,7 +24,7 @@ public class SimpleChatbot {
 
         // 1. Initialize the LLM Client and Low-Level Chat Services
         LLM_Client client = new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90),"local", false, new DefaultStreamResponseParser(), 50L);
-        ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "qwen/qwen3-14b");
+        ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "qwen/qwen3-4b");
 
         // 2. Define Model Parameters
         ModelParams params = new ModelParams.Builder()
@@ -73,8 +73,14 @@ public class SimpleChatbot {
 
             try {
                 System.out.print("LLM: ");
-                chatService.chatStream(input, System.out::print);
-                System.out.println();
+                String content = chatService.chat(input);
+                String reasoning = chatService.getLastReasoningContent();
+
+                if (reasoning != null && !reasoning.trim().isEmpty()) {
+                    System.out.println("\n[Reasoning]:" + reasoning);
+                }
+                System.out.println("\n[Content]:" + content);
+
             } catch (Exception e) {
                 ExceptionHandler.handle(e);
             }

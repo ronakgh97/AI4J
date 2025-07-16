@@ -64,9 +64,11 @@ public class TokenBasedChatbot {
                     StringBuilder streamedResponse = new StringBuilder();
                     chatService.chatStream(userMessage.replace("/stream", "").trim(), new StreamHandler() {
                         @Override
-                        public void onStream(String content) {
-                            System.out.print(content);
-                            streamedResponse.append(content);
+                        public void onStream(com.aiforjava.llm.streams.StreamResponse response) {
+                            if (response.getContent() != null) {
+                                System.out.print(response.getContent());
+                                streamedResponse.append(response.getContent());
+                            }
                         }
                     });
                     System.out.println(); // New line after streaming completes

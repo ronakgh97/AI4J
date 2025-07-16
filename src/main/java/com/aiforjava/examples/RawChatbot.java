@@ -5,6 +5,7 @@ import com.aiforjava.llm.Chat.LowLevel.ChatServices_LowLevel;
 import com.aiforjava.llm.client.DefaultHttpClient;
 import com.aiforjava.llm.streams.DefaultStreamResponseParser;
 import com.aiforjava.llm.client.LLM_Client;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -23,7 +24,7 @@ public class RawChatbot {
 
     public static void main(String[] args) {
         LLM_Client client = new DefaultHttpClient("http://localhost:1234", Duration.ofSeconds(90),"local", false, new DefaultStreamResponseParser(), 50L);
-        ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "google/gemma-3-1b");
+        ChatServices_LowLevel llm = new ChatServices_LowLevel(client, "qwen/qwen3-4b");
         ObjectMapper mapper = new ObjectMapper();
 
         Scanner scanner = new Scanner(System.in);
@@ -42,7 +43,7 @@ public class RawChatbot {
             }
 
             ObjectNode request = mapper.createObjectNode();
-            request.put("model", "gemma-3-4b-it");
+            request.put("model", "qwen/qwen3-4b");
             request.put("temperature", 0.7);
             request.put("max_tokens", 256);
             request.put("stream", false);
@@ -58,12 +59,25 @@ public class RawChatbot {
             String requestJson = request.toString();
 
             try {
-                System.out.print("LLM: ");
+                System.out.println("LLM Response:");
                 String rawResponse = llm.generateRaw("v1/chat/completions", requestJson);
-                String content = mapper.readTree(rawResponse)
-                                       .path("choices").get(0)
-                                       .path("message").path("content").asText();
-                System.out.println(content);
+                JsonNode responseNode = mapper.readTree(rawResponse);
+
+                // Navigate to the message node
+                JsonNode messageNode = responseNode.path("choices").get(0).path("message");
+
+                // Extract and print reasoning content if it exists
+                if (messageNode.has("reasoning_content")) {
+                    String reasoning = messageNode.get("reasoning_content").asText();
+                    if (reasoning != null && !reasoning.trim().isEmpty()) {
+                        System.out.println("\n[Reasoning]:" + reasoning);
+                    }
+                }
+
+                // Extract and print the main content
+                String content = messageNode.path("content").asText();
+                System.out.println("\n[Content]:" + content);
+
             } catch (Exception e) {
                 ExceptionHandler.handle(e);
             }

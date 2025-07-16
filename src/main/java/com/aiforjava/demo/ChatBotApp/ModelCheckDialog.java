@@ -1,4 +1,4 @@
-package com.aiforjava.demo;
+package com.aiforjava.demo.ChatBotApp;
 
 import com.aiforjava.llm.models.ModelRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -6,8 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -15,6 +13,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class ModelCheckDialog extends JDialog {
@@ -27,6 +26,7 @@ public class ModelCheckDialog extends JDialog {
     private String llmBaseUrl;
     private boolean canProceed = false;
     private boolean cancelledByUser = true; // New: Flag to track if dialog was cancelled by user
+    private String foundModelName; // To store the name of the first found model
 
     // UI Constants (matching SwingChatbot for consistency)
     private static final Color BACKGROUND_COLOR = new Color(48, 48, 48);
@@ -46,10 +46,19 @@ public class ModelCheckDialog extends JDialog {
         setLocationRelativeTo(null);
         setResizable(false);
 
+        // Set the application icon
+        try {
+            //Image icon = Toolkit.getDefaultToolkit().getImage(SwingChatbot.class.getResource("/_icon.jpg"));
+            ImageIcon icon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/_icon.jpg")));
+            this.setIconImage(icon.getImage());
+        } catch (Exception e) {
+            System.err.println("Error loading icon: " + e.getMessage());
+        }
+
         initUI();
         
         // Initialize animation timer
-        animationTimer = new Timer(5000, e -> {
+        animationTimer = new Timer(10, e -> {
             String[] frames = {"Loading ", "Loading. ", "Loading.. ", "Loading... ", "Loading.... "};
             animationLabel.setText(frames[animationState]);
             animationState = (animationState + 1) % frames.length;
@@ -68,7 +77,7 @@ public class ModelCheckDialog extends JDialog {
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // Title
-        JLabel titleLabel = new JLabel("AI4J Model Check", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("Server & Model Check", SwingConstants.CENTER);
         titleLabel.setFont(TITLE_FONT);
         titleLabel.setForeground(ACCENT_COLOR);
         gbc.gridx = 0;
@@ -144,6 +153,7 @@ public class ModelCheckDialog extends JDialog {
                 try {
                     HttpClient httpClient = HttpClient.newBuilder()
                             .connectTimeout(Duration.ofSeconds(10))
+                            .version(HttpClient.Version.HTTP_2)
                             .build();
 
                     HttpRequest request = HttpRequest.newBuilder()
@@ -191,6 +201,10 @@ public class ModelCheckDialog extends JDialog {
                         if (allFound) {
                             publish("All models found on the server.");
                             canProceed = true;
+                            // Set foundModelName to the first hardcoded model if all are found
+                            if (!hardcodedModels.isEmpty()) {
+                                foundModelName = hardcodedModels.iterator().next();
+                            }
                         } else {
                             publish("<html><font color='red'>Warning: Some models are not available on the server:</font><br>" + missingModels.toString().replace(" ", "<br>") + "</html>");
                             canProceed = false; // Cannot proceed if models are missing
@@ -230,6 +244,10 @@ public class ModelCheckDialog extends JDialog {
 
     public boolean isCancelledByUser() {
         return cancelledByUser;
+    }
+
+    public String getFoundModelName() {
+        return foundModelName;
     }
 
     @Override

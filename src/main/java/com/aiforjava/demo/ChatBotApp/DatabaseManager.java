@@ -1,4 +1,4 @@
-package com.aiforjava.demo;
+package com.aiforjava.demo.ChatBotApp;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
