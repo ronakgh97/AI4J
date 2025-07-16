@@ -27,7 +27,7 @@ public class CachedFileMemory implements MemoryManager {
 
     private static final Logger logger = LoggerFactory.getLogger(CachedFileMemory.class);
     private static final String DEFAULT_LOG_DIRECTORY = "chat_logs";
-    private static final String DEFAULT_LOG_FILE_NAME = "chat_history.json";
+    private static final String DEFAULT_LOG_FILE_NAME = "chat_memory.json";
 
     private final Path logFilePath;
     private final ObjectMapper objectMapper;

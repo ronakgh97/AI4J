@@ -24,7 +24,7 @@ import java.util.List;
  */
 public class FileMemory implements MemoryManager {
     private static final String DEFAULT_HISTORY_DIR = "chat_logs";
-    private static final String HISTORY_FILE = "chat_history.json";
+    private static final String HISTORY_FILE = "chat_memory.json";
     private final Path historyFilePath;
     private final ObjectMapper mapper;
 

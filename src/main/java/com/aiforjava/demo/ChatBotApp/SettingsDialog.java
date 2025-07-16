@@ -42,7 +42,7 @@ public class SettingsDialog extends JDialog {
 
     public SettingsDialog(JFrame parent, ModelParams initialParams, String initialModelName) {
         super(parent, "AI Settings", true); // Modal dialog
-        setSize(512, 512); // Increased height to accommodate new sliders
+        setSize(600, 500); // Increased height to accommodate new sliders
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
         getContentPane().setBackground(BACKGROUND_COLOR);
